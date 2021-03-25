@@ -18,13 +18,14 @@
   "register a system for the query in the world."
   (array/push (get world :systems) [query func]))
 
-# TODO: look into flipping the iterations (iterate through each entity first, then filter systems)
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
-  (each (query func) (get self :systems)
-    (each match (filter (fn [e] (all |(get e $) query)) (self :entities))
-      (func ;(map |(get match $) query) dt))))
+  (each entity (self :entities)
+    (each (query func) (self :systems)
+      (when (all |(get entity $) query)
+        (func ;(map |(get match $) query) dt)))))
 
+# (each match (filter (fn [e] (all |(get e $) query)) (self :entities)))
 (defn create-world []
   @{:entities @[]
     :systems @[]

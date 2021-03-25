@@ -1,6 +1,6 @@
 (declare-project
- :name "jump"
- :description "jump start your game with common tools"
+ :name "junk-drawer"
+ :description "A collection of random, but common, tools for gamedev."
  :author "Alec Troemel"
  :license "MIT")
 
