@@ -6,6 +6,10 @@
 (:every t 2 (fn [h] (print "  every 2")))
 (:after t 3 (fn [h] (print "  after 3")))
 
+# you can even do tweening
+(def color @{:r 0 :g 0 :b 0})
+(:tween t 10 color {:r 255 :g 255 :b 255} :in-out-quad)
+
 # Simulate dt ticking
 (for dt 0 10
   (print "tick: " dt)
