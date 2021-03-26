@@ -21,7 +21,7 @@
                  :count 1
                  :during during-fn
                  :after after-fn}]
-    (put-in self [:_functions handle] true)
+    (put-in self [:handles handle] true)
     handle))
 
 (defn- after [self delay after-fn]
@@ -35,20 +35,20 @@
                  :after after
                  :limit delay
                  :count count}]
-    (put-in self [:_functions handle] true)
+    (put-in self [:handles handle] true)
     handle))
 
 (defn- cancel [self handle]
   "Prevent a timer from being executed in the future."
-  (put-in self [:_functions handle] nil))
+  (put-in self [:handles handle] nil))
 
 (defn- clear [self]
   "Remove all timed and periodic functions."
-  (set (self :_functions) @{}))
+  (set (self :handles) @{}))
 
 (defn- update [self dt]
   "Update timers and execute functions if the deadline is reached."
-  (eachk handle (self :_functions)
+  (eachk handle (self :handles)
          (update-timer-handle handle dt)
          (when (= (handle :count) 0)
            (:cancel self handle))))
@@ -95,7 +95,7 @@
 
 (defn init []
   "Creates a new timer instance."
-  {:_functions @{}
+  {:handles @{}
    :during during
    :after after
    :every every
