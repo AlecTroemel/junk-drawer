@@ -1,3 +1,5 @@
+(import /tweens)
+
 (defn- update-timer-handle [handle dt]
   (let [{:time h-time
          :limit h-limit
@@ -51,6 +53,46 @@
          (when (= (handle :count) 0)
            (:cancel self handle))))
 
+(defn- tween-deep-delta [subject target]
+  "Creates a table of the same structure of target,
+   with the deltas between subject and target as the values"
+  (match (type target)
+    :number (- target subject)
+    :tuple (map
+            |(let [(i v) $] (tween-deep-delta (subject i) v))
+            (pairs target))
+    :struct (table
+             ;(mapcat
+               |(let [(key val) $] [key (tween-deep-delta (subject key) val)])
+               (pairs target)))
+    _ nil))
+
+(defn- tween-deep-update [subject delta ds]
+  ""
+  (match (type delta)
+    :number (+ subject (* delta ds))
+    :tuple (map
+            |(let [(i v) $] (tween-deep-update (subject i) v ds))
+            (pairs delta))
+    :struct (table
+             ;(mapcat
+               |(let [(key val) $] [key (tween-deep-update (subject key) val ds)])
+               (pairs delta)))
+    _ nil))
+
+(defn- tween [self len subject target method after]
+  "tween the subject to target with the given method over the length"
+  (let [tween-fn (symbol "tweens/" method)
+        deltas (tween-deep-delta subject target)
+        during-fn (fn [handle dt]
+                    (let [h-time (get handle :time)
+                                 last-s (get handle :last-s 0)
+                                 s (tween-fn (min 1 (/ h-time len)))
+                                 ds (- s last-s)]
+                      (put handle :last-s s)
+                      (tween-deep-update subject deltas ds)))]
+    (:during self len during-fn after)))
+
 (defn init []
   "Creates a new timer instance."
   {:_functions @{}
@@ -59,4 +101,5 @@
    :every every
    :cancel cancel
    :clear clear
-   :update update})
+   :update update
+   :tween tween})
