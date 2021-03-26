@@ -59,11 +59,13 @@
   (match (type target)
     :number (- target subject)
     :tuple (map
-            |(let [(i v) $] (tween-deep-delta (subject i) v))
+            |(let [(i v) $]
+               (tween-deep-delta (subject i) v))
             (pairs target))
     :struct (table
              ;(mapcat
-               |(let [(key val) $] [key (tween-deep-delta (subject key) val)])
+               |(let [(key val) $]
+                  [key (tween-deep-delta (subject key) val)])
                (pairs target)))
     _ nil))
 
@@ -72,11 +74,13 @@
   (match (type delta)
     :number (+ subject (* delta ds))
     :tuple (map
-            |(let [(i v) $] (tween-deep-update (subject i) v ds))
+            |(let [(i v) $]
+               (tween-deep-update (subject i) v ds))
             (pairs delta))
     :struct (table
              ;(mapcat
-               |(let [(key val) $] [key (tween-deep-update (subject key) val ds)])
+               |(let [(key val) $]
+                  [key (tween-deep-update (subject key) val ds)])
                (pairs delta)))
     _ nil))
 
