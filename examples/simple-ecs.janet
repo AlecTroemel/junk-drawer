@@ -11,20 +11,22 @@
 (add-entity world (position 44 33) (velocity 8 9))
 (add-entity world (position 100 24))
 
-# Systems are functions that work on an entity queryset ...
-(defn sys-move [queryset dt]
+# Systems have queryset and dt args ...
+(def-system move [:position :velocity]
   (each [pos vel] queryset
     (put pos :x (+ (pos :x) (* dt (vel :x))))
     (put pos :y (+ (pos :y) (* dt (vel :y))))))
 
 # ... That you register on a world with a query
-(register-system world [:position :velocity] sys-move)
+(register-system world move)
 
-# you can inline the function if you want
-(register-system world [:position]
- (fn sys-print-pos [q dt]
-   (print "dt " dt)
-   (each (pos) q (printf "pos %q" pos))))
+
+# Here's another system
+(def-system print-position [:position]
+  (each [pos] queryset (pp pos)))
+
+(register-system world print-position)
+
 
 # then just call update every frame :)
 (def mock-dt 1)

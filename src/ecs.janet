@@ -6,6 +6,10 @@
         ,(map |(keyword $) fields)
         ,fields))))
 
+(defmacro def-system [name query & body]
+  ~(def ,name
+     (tuple ,query (fn [queryset dt] ,;body))))
+
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
   (with-syms [$id $db]
@@ -17,9 +21,9 @@
           components)
        (put world :id-counter (inc ,$id)))))
 
-(defn register-system [world query func]
+(defn register-system [world sys]
   "register a system for the query in the world."
-  (array/push (get world :systems) [query func]))
+  (array/push (get world :systems) sys))
 
 (defn- query-database [db query]
   (mapcat
