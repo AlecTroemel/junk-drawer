@@ -10,15 +10,16 @@
 (def-component circle [radius color])
 
 # System Callbacks
-(defn sys-move [pos vel dt]
-  (put pos :x (+ (pos :x) (* dt (vel :x))))
-  (put pos :y (+ (pos :y) (* dt (vel :y)))))
+(defn sys-move [q dt]
+  (each [pos vel] q
+    (put pos :x (+ (pos :x) (* dt (vel :x))))
+    (put pos :y (+ (pos :y) (* dt (vel :y))))))
 
-(defn sys-draw-circle [pos circle dt]
-  (draw-circle
-   (pos :x) (pos :y)
-   (circle :radius) (circle :color)))
-
+(defn sys-draw-circle [q dt]
+  (each [pos circle] q
+    (draw-circle
+     (pos :x) (pos :y)
+     (circle :radius) (circle :color))))
 
 (def pause
   {:update (fn pause-update [self dt]
@@ -55,8 +56,6 @@
 
              (when (key-pressed? :space)
                (:push GS pause)))})
-
-
 
 (:push GS game)
 
