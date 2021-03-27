@@ -8,19 +8,20 @@
 # draw:   Draw on the screen. Called every frame.
 
 (defn- exec-if-has [t f & args]
-  (when (get t f) (f (get t g) ;args)))
+  (default args [])
+  (when (get t f) (f t ;args)))
 
 (defn- change-state [self to & args]
   (let [pre (array/peek (self :_stack))]
-    (when (get-in self [:initialized-states to])
-      (exec-if-has to :init to))
+    (when (nil? (get-in self [:initialized-states to]))
+      (exec-if-has to :init))
     (put-in self [:initialized-states to] true)
     (array/push (self :_stack) to)
     (exec-if-has to :enter to pre ;args)))
 
 (defn- switch [self to & args]
   "Switch to a gamestate, with any additional arguments passed to the new state."
-  (exec-if-has (:current self) :leave pre)
+  (exec-if-has (:current self) :leave to)
   (array/pop (self :_stack))
   (:change-state self to ;args))
 
@@ -51,6 +52,7 @@
 (defn init []
   "create a new gamestate manager"
   {:_stack @[]
+   :initialized-states @{}
    :change-state change-state
    :switch switch
    :push push

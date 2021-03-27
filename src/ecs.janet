@@ -9,7 +9,7 @@
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
   ~(array/push
-    (get world :entities)
+    (get ,world :entities)
     (zipcoll
      ,(map |(keyword (first $)) components)
      ,(map |(eval $) components))))
@@ -23,9 +23,8 @@
   (each entity (self :entities)
     (each (query func) (self :systems)
       (when (all |(get entity $) query)
-        (func ;(map |(get match $) query) dt)))))
+        (func ;(map |(get entity $) query) dt)))))
 
-# (each match (filter (fn [e] (all |(get e $) query)) (self :entities)))
 (defn create-world []
   @{:entities @[]
     :systems @[]
