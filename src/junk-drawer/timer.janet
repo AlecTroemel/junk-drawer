@@ -1,4 +1,4 @@
-(import /tweens)
+(import ./tweens)
 
 (defn- update-timer-handle [handle dt]
   (let [{:time h-time
