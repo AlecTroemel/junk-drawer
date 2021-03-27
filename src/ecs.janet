@@ -8,15 +8,31 @@
 
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
-  ~(array/push
-    (get ,world :entities)
-    (zipcoll
-     ,(map |(keyword (first $)) components)
-     ,(map |(eval $) components))))
+  (with-syms [$id $db]
+    ~(let [,$id (get world :id-counter)
+                ,$db (get world :database)]
+       # add entity id in db
+       (put-in ,$db [:entities ,$id] true)
+
+       # Add entity components in db
+       ,;(map
+          |(quasiquote (put-in ,$db [,(keyword (first $)) ,$id] ,$))
+          components)
+
+       # Increment the id counter
+       (put world :id-counter (inc ,$id)))))
+
 
 (defn register-system [world query func]
   "register a system for the query in the world."
   (array/push (get world :systems) [query func]))
+
+(defn create-world []
+  @{:id-counter 0
+    :database @{}
+    :systems @[]
+    :update update})
+
 
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
@@ -24,8 +40,3 @@
     (each (query func) (self :systems)
       (when (all |(get entity $) query)
         (func ;(map |(get entity $) query) dt)))))
-
-(defn create-world []
-  @{:entities @[]
-    :systems @[]
-    :update update})

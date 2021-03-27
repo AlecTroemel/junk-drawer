@@ -4,11 +4,12 @@
 (def-component position [x y])
 (def-component velocity [x y])
 
+
 # create a world to hold your entities + systems
 (def world (create-world))
 
 # Add entities to a world
-(add-entity world (position 10 10) (velocity 1 2))
+(add-entity world (position 44 33) (velocity 8 9))
 (add-entity world (position 100 24))
 
 # Register systems to a world

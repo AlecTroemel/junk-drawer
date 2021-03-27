@@ -44,7 +44,7 @@
 
 (defn- clear [self]
   "Remove all timed and periodic functions."
-  (set (self :handles) @{}))
+  (set tim(self :handles) @{}))
 
 (defn- update [self dt]
   "Update timers and execute functions if the deadline is reached."
