@@ -7,4 +7,4 @@
  :repo "git+https://github.com/AlecTroemel/junk-drawer")
 
 (declare-source
- :source @["src", "src/junk-drawer.janet"])
+ :source @["src" "src/junk-drawer.janet"])
