@@ -7,10 +7,10 @@
         ,fields))))
 
 (defmacro def-system [name queries & body]
+  "Define a system to do work on a list of queries."
   ~(def ,name
      (tuple
       ,(values (struct ;queries))
-
       (fn [,;(keys (struct ;queries)) dt] ,;body))))
 
 (defmacro add-entity [world & components]
