@@ -6,9 +6,12 @@
         ,(map |(keyword $) fields)
         ,fields))))
 
-(defmacro def-system [name query & body]
+(defmacro def-system [name queries & body]
   ~(def ,name
-     (tuple ,query (fn [queryset dt] ,;body))))
+     (tuple
+      ,(values (struct ;queries))
+
+      (fn [,;(keys (struct ;queries)) dt] ,;body))))
 
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
@@ -34,8 +37,9 @@
 
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
-  (each (query func) (self :systems)
-    (func (query-database (self :database) query) dt)))
+  (loop [(queries func) :in (self :systems)
+         :let [queries (map |(query-database (self :database) $) queries)]]
+    (func ;queries dt)))
 
 (defn create-world []
   @{:id-counter 0
