@@ -8,8 +8,8 @@
 (def world (create-world))
 
 # Add entities to a world
-(add-entity world (position 44 33) (velocity 8 9))
-(add-entity world (position 100 24))
+(add-entity world (position 10 10) (velocity (- 1) (- 1)))
+(add-entity world (position 3 5))
 
 # Systems are a list of queries and a body that does work on them.
 # "dt" (which is passed into a worlds update method) is implicitly available to all systems
@@ -28,11 +28,28 @@
   (print "positions:")
   (each [pos] poss (pp pos))
   (print "velocities:")
-  (each [vel] vels (pp vel))
-  (print "\n"))
+  (each [vel] vels (pp vel)))
 
 (register-system world print-position)
 
+# there are a couple special queries
+# the most commen one is to get the parent world of the system
+# you can use this to delete entities.
+#
+# In this example the entity will be destroyed if its x,y coords both become 0.
+# Given the entities defined above this should take 10 iterations
+(def-system remove-dead
+  (entities [:entity :position] wld :world)
+  (each [ent pos] entities
+    (when (deep= pos @{:x 0 :y 0})
+      (print "time to die entity id " ent)
+      (remove-entity wld ent))))
+
+(register-system world remove-dead)
+
 # then just call update every frame :)
-(def mock-dt 1)
-(:update world mock-dt)
+# We assume dt is just 1 here
+(for i 0 15
+  (print "i: " i)
+  (:update world 1)
+  (print ""))

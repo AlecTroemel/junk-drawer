@@ -24,7 +24,8 @@
           components)
        (put world :id-counter (inc ,$id)))))
 
-(defn- remove-entity [world ent]
+(defn remove-entity [world ent]
+  "remove an entity ID from the world."
   (eachp [name components] (world :database)
          (put components ent nil)))
 
@@ -40,6 +41,7 @@
    (keys (get db :entity))))
 
 (defn- query-result [world query]
+  "either return a special query, or the results of the ecs query"
   (match query
     :world world
     [_] (query-database (world :database) query)))
