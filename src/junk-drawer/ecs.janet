@@ -18,11 +18,15 @@
   (with-syms [$id $db]
     ~(let [,$id (get world :id-counter)
            ,$db (get world :database)]
-       (put-in ,$db [:entity ,$id] true)
+       (put-in ,$db [:entity ,$id] ,$id)
        ,;(map
           |(quasiquote (put-in ,$db [,(keyword (first $)) ,$id] ,$))
           components)
        (put world :id-counter (inc ,$id)))))
+
+(defn- remove-entity [world ent]
+  (eachp [name components] (world :database)
+         (put components ent nil)))
 
 (defn register-system [world sys]
   "register a system for the query in the world."
@@ -35,11 +39,17 @@
        (if (every? result) [result] [])))
    (keys (get db :entity))))
 
+(defn- query-result [world query]
+  (match query
+    :world world
+    [_] (query-database (world :database) query)))
+
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
-  (loop [(queries func) :in (self :systems)
-         :let [queries (map |(query-database (self :database) $) queries)]]
-    (func ;queries dt)))
+  (loop [(queries func)
+         :in (self :systems)
+         :let [queries-results (map |(query-result self $) queries)]]
+    (func ;queries-results dt)))
 
 (defn create-world []
   @{:id-counter 0
