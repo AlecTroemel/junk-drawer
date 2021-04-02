@@ -6,6 +6,10 @@
         ,(map |(keyword $) fields)
         ,fields))))
 
+(defmacro def-tag [name]
+  "Define a new tag (component with no data)."
+  ~(def ,name (fn ,name [] true)))
+
 (defmacro def-system [name queries & body]
   "Define a system to do work on a list of queries."
   ~(def ,name

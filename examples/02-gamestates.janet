@@ -1,4 +1,4 @@
-(import ./../src/gamestate)
+(import ./../src/junk-drawer)
 
 (def menu
   {:init (fn [self] (print "menu init"))

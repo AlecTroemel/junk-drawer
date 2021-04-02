@@ -32,9 +32,8 @@
 
 (register-system world print-position)
 
-# there are a couple special queries
-# the most commen one is to get the parent world of the system
-# you can use this to delete entities.
+# you can also get the parent world of the system with a special query
+# you can use this to delete/create entities within a system!
 #
 # In this example the entity will be destroyed if its x,y coords both become 0.
 # Given the entities defined above this should take 10 iterations
@@ -46,6 +45,24 @@
       (remove-entity wld ent))))
 
 (register-system world remove-dead)
+
+# There is a special type of component called a tag, which just has no data
+# you can use this to further seperate entities out
+
+(def-tag monster)
+
+(add-entity world
+ (position 10 10)
+ (velocity 1 1)
+ (monster))
+
+(def-system print-monsters
+  (monsters [:entity :position :monster])
+  (each [ent pos] monsters
+    ()))
+
+(register-system world print-monsters)
+
 
 # then just call update every frame :)
 # We assume dt is just 1 here

@@ -2,6 +2,11 @@
 (import /../src/ecs :prefix "")
 (import /../src/gamestate)
 
+(def black (map |(/ $ 255) [50 47 41]))
+(def white (map |(/ $ 255) [177 174 168]))
+(def screen-width 400)
+(def screen-height 240)
+
 (def GS (gamestate/init))
 
 # Components
@@ -23,7 +28,7 @@
 
 (def pause
   {:update (fn pause-update [self dt]
-             (draw-poly [500 200] 5 40 0 :magenta)
+             (draw-poly [100 100] 5 40 0 :magenta)
 
              (when (key-pressed? :space)
                (:pop GS)))})
@@ -37,11 +42,11 @@
              (add-entity world
                          (position 100.0 100.0)
                          (velocity 1 2)
-                         (circle 40 :red))
+                         (circle 40 white))
              (add-entity (self :world)
-                         (position 500.0 500.0)
+                         (position 200.0 50.0)
                          (velocity (- 2) 4)
-                         (circle 40 :blue))
+                         (circle 40 white))
 
              # Systems
              (register-system (self :world)
@@ -60,14 +65,27 @@
 (:push GS game)
 
 # Jayley Code
-(init-window 1000 1000 "Test Game")
-(set-target-fps 60)
+# https://github.com/raysan5/raylib/blob/master/examples/shaders/shaders_custom_uniform.c
+
+(init-window 800 480 "Test Game")
+(set-target-fps 30)
 (hide-cursor)
+
+(def target (load-render-texture screen-width screen-height))
 
 (while (not (window-should-close))
   (begin-drawing)
-  (clear-background [0 0 0])
+  (clear-background black)
   (:update GS 1)
-  (end-drawing))
+  (draw-fps 10 10)
+  (end-drawing)
 
+  # (begin-texture-mode target)
+  # (draw-circle 300 400 40 white)
+  # (end-texture-mode)
+  # (draw-texture (get-texture-default) 0 0 :white)
+  # (draw-texture-rec target.texture 0 0 screen-width screen-height [0 0] :white)
+  )
+
+(unload-render-texture target)
 (close-window)
