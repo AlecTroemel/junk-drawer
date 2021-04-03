@@ -12,7 +12,8 @@
     ((tmr :during) wld dt)
     (when (and (>= (tmr :time) (tmr :limit))
                (> (tmr :count) 0))
-      ((tmr :after) wld dt)
+
+      ((get tmr :after) wld dt)
       (put tmr :time (- (tmr :time) (tmr :limit)))
       (put tmr :count (- (tmr :count) 1)))
     (when (= 0 (tmr :count))
