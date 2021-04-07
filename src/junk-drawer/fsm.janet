@@ -1,9 +1,3 @@
-# TODO:
-# [X] Finalize API
-# [X] normal callbacks
-# [X] simple example
-# [ ] example with fsm & other components
-
 (defn- goto [self to]
   (assert (self to) (string/format "%q is not a valid state" to))
 
@@ -31,6 +25,7 @@
 
 
 (defmacro define [name & states]
+  "define a FSM creating function with the given states."
   (with-syms [$state-names]
     ~(defn ,name [initial-state]
        ,(let [$state-names (map |(keyword (first $)) states)]
