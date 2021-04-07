@@ -6,7 +6,7 @@
   [time limit count during after])
 
 (def-system update-sys
-  (timers [:entity :timer-cmp] wld :world)
+  {timers [:entity :timer-cmp] wld :world}
   (each [ent tmr] timers
     (put tmr :time (+ (tmr :time) dt))
     ((tmr :during) wld dt)
@@ -77,3 +77,4 @@
 #                       (put handle :last-s s)
 #                       (tween-deep-update subject deltas ds)))]
 #     (:during self len during-fn after)))
+

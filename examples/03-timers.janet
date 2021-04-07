@@ -1,4 +1,4 @@
-(use ./../junk-drawer)
+(use ../junk-drawer)
 
 # Timers are just entities, with a system registered in the world
 # callbacks for timers get both the world and dt args
@@ -17,7 +17,7 @@
               (fn [wld dt] (print "every 2, but only 3 times"))
               3) # default is loop for infinity
 
-(for i 0 11
+(for i 0 21
   (print "i: " i)
   (:update world 1)
   (print ""))
