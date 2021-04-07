@@ -2,11 +2,11 @@
 
 (defn- noop [& args] nil)
 
-(def-component timer
+(def-component timer-cmp
   [time limit count during after])
 
 (def-system update-sys
-  (timers [:entity :timer] wld :world)
+  (timers [:entity :timer-cmp] wld :world)
   (each [ent tmr] timers
     (put tmr :time (+ (tmr :time) dt))
     ((tmr :during) wld dt)
@@ -21,14 +21,59 @@
 
 (defn after [world delay after-fn]
   "Schedule a fn to run after 'delay' seconds."
-  (add-entity world (timer 0 delay 1 noop after-fn)))
+  (add-entity world (timer-cmp 0 delay 1 noop after-fn)))
 
 (defn during [world delay during-fn &opt after-fn]
   "run during fn every 'delay' seconds, then optionally run after fn."
   (default after-fn noop)
-  (add-entity world (timer 0 delay 1 during-fn after-fn)))
+  (add-entity world (timer-cmp 0 delay 1 during-fn after-fn)))
 
 (defn every [world delay after-fn &opt count]
   "Schedule a fn to run every 'delay' seconds, up to count (default is infinity)."
   (default count math/inf)
-  (add-entity world (timer 0 delay count noop after-fn)))
+  (add-entity world (timer-cmp 0 delay count noop after-fn)))
+
+
+# (defn- tween-deep-delta [subject target]
+#   "Creates a table of the same structure of target,
+#    with the deltas between subject and target as the values"
+#   (match (type target)
+#     :number (- target subject)
+#     :tuple (map
+#             |(let [(i v) $]
+#                (tween-deep-delta (subject i) v))
+#             (pairs target))
+#     :struct (table
+#              ;(mapcat
+#                |(let [(key val) $]
+#                   [key (tween-deep-delta (subject key) val)])
+#                (pairs target)))
+#     _ nil))
+
+# (defn- tween-deep-update [subject delta ds]
+#   ""
+#   (match (type delta)
+#     :number (+ subject (* delta ds))
+#     :tuple (map
+#             |(let [(i v) $]
+#                (tween-deep-update (subject i) v ds))
+#             (pairs delta))
+#     :struct (table
+#              ;(mapcat
+#                |(let [(key val) $]
+#                   [key (tween-deep-update (subject key) val ds)])
+#                (pairs delta)))
+#     _ nil))
+
+# (defn- tween [self len subject target method after]
+#   "tween the subject to target with the given method over the length"
+#   (let [tween-fn (symbol "tweens/" method)
+#         deltas (tween-deep-delta subject target)
+#         during-fn (fn [handle dt]
+#                     (let [h-time (get handle :time)
+#                                  last-s (get handle :last-s 0)
+#                                  s (tween-fn (min 1 (/ h-time len)))
+#                                  ds (- s last-s)]
+#                       (put handle :last-s s)
+#                       (tween-deep-update subject deltas ds)))]
+#     (:during self len during-fn after)))
