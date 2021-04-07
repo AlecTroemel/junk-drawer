@@ -2,7 +2,8 @@ Everyones got one. __Junk Drawer__ is a small collection of tools for developing
 
 ### Contents:
 
+- `ecs.janet`: A simple Entity Component System
+- `fsm.janet`: Finite(ish) State Machine
 - `gamestate.janet`: Easy gamestate management.
 - `timer.janet`: Delayed and time-limited function calls and tweening.
-- `ecs.janet`: A simple Entity Component System
 - `tweens.janet`: Some common tweens
