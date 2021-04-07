@@ -3,13 +3,15 @@
 # Register (global) components, these are shared across worlds.
 (def-component position [x y])
 (def-component velocity [x y])
+(def-component lives [cnt])
 
 # create a world to hold your entities + systems
 (def world (create-world))
 
 # Add entities to a world
-(add-entity world (position 10 10) (velocity -1 -1))
-(add-entity world (position 3 5))
+(add-entity world (position 10 10) (velocity -1 -1) (lives 2))
+(add-entity world (position 8 8) (velocity -2 -2) (lives 1))
+(add-entity world (position 3 5) (lives 1))
 
 # Systems are a list of queries and a body that does work on them.
 # "dt" (which is passed into a worlds update method) is implicitly available to all systems
@@ -24,11 +26,13 @@
 
 # Here's a system that has multiple queries
 (def-system print-position
-  {poss [:position] vels [:velocity]}
+  {poss [:position] vels [:velocity] livs [:lives]}
   (print "positions:")
   (each [pos] poss (pp pos))
   (print "velocities:")
-  (each [vel] vels (pp vel)))
+  (each [vel] vels (pp vel))
+  (print "lives:")
+  (each [liv] livs (pp liv)))
 
 (register-system world print-position)
 
@@ -52,22 +56,38 @@
 (def-tag monster)
 
 (add-entity world
-            (position 10 10)
-            (velocity 1.1 1.1)
+            (position 0 0)
+            (velocity 1 1)
+            (monster))
+
+(add-entity world
+            (position 0 5)
+            (velocity 1 0)
             (monster))
 
 (def-system print-monsters
-  {monsters [:entity :position :monster]}
+  {monsters [:entity :position :monster]
+   entities [:entity :position :lives]
+   wld :world}
   (each [ent pos] monsters
     (prin "Monster ")
-    (pp pos)))
+    (pp pos)
+    (if-let [[e]
+             (filter (fn [[e p l]]
+                       (and (not= ent e) (deep= p pos))) entities)]
+      (when-let [[i _ l] e]
+        (printf "monster got %j" e)
+        (remove-entity wld ent)
+        (if (one? (l :cnt))
+          (remove-entity wld e)
+          (update l :cnt dec))))))
 
 (register-system world print-monsters)
 
 
 # then just call update every frame :)
 # We assume dt is just 1 here
-(for i 0 15
+(for i 0 6
   (print "i: " i)
   (:update world 1)
   (print))
