@@ -13,16 +13,16 @@
 (def-tag my-tick)
 
 (timers/every world 2
-  (fn [wld dt]
-    (messages/send wld "hello" my-tick)))
+              (fn [wld dt]
+                (messages/send wld "hello" my-tick)))
 
 # then you may query for that specific message.
 # dont forget to consume the message after youre done with it, otherwise
 # you will get it on the next loop.
 (def-system reciever-sys
   (wld :world
-   msgs [:message :my-tick]
-   movables [:position :velocity])
+       msgs [:message :my-tick]
+       movables [:position :velocity])
   (if (> (length msgs) 0)
     (each [msg] msgs
       (pp "consume it")

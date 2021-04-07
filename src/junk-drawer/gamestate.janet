@@ -34,8 +34,8 @@
   (assert (> (length (self :_stack)) 1) "No more states to pop!")
   (let [pre (array/pop (self :_stack))
         to (array/peek (self :_stack))]
-    (exec-if-has pre :leave pre)
-    (exec-if-has to :resume to pre ;args)))
+    (exec-if-has self pre :leave pre)
+    (exec-if-has self to :resume to pre ;args)))
 
 (defn- current [self]
   "Returns the currently activated gamestate."
