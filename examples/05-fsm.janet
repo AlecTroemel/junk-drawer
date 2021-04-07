@@ -1,6 +1,7 @@
 (use ./../src/junk-drawer)
 
-
+# Example 1
+#
 # this macro is used to define the state "factory"
 # The goto method is used to transition between states.
 # the Enter and Leave methods are optional, and are called during the GOTO method.
@@ -32,6 +33,8 @@
 (:clear *state*)
 (print "final: " (*state* :current))
 
+# Example 2
+#
 # This is a very "informal" State machine.
 # you can put any arbitrary data/method in a state,
 # and it will be available on the root machine when in that state.
