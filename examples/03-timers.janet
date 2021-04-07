@@ -1,4 +1,4 @@
-(use ./../src/junk-drawer)
+(use ./../junk-drawer)
 
 # Timers are just entities, with a system registered in the world
 # callbacks for timers get both the world and dt args

@@ -1,4 +1,4 @@
-(use ./../src/junk-drawer)
+(use ./../junk-drawer)
 
 # Example 1
 #

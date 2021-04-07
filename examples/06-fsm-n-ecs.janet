@@ -1,4 +1,4 @@
-(use ./../src/junk-drawer)
+(use ./../junk-drawer)
 
 # Since FSM's are just functions that return tables,
 # they can be added as components to entities!

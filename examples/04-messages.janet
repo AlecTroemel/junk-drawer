@@ -1,4 +1,4 @@
-(use ./../src/junk-drawer)
+(use ./../junk-drawer)
 
 (def world (create-world))
 

@@ -1,4 +1,4 @@
-(use ./../src/junk-drawer)
+(use ./../junk-drawer)
 
 # Register (global) components, these are shared across worlds.
 (def-component position [x y])
