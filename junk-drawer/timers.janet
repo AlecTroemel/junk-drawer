@@ -2,11 +2,11 @@
 
 (defn- noop [& args] nil)
 
-(def-component timer-cmp
+(def-component timer
   [time limit count during after])
 
 (def-system update-sys
-  (timers [:entity :timer-cmp] wld :world)
+  (timers [:entity :timer] wld :world)
   (each [ent tmr] timers
     (put tmr :time (+ (tmr :time) dt))
     ((tmr :during) wld dt)
@@ -21,17 +21,18 @@
 
 (defn after [world delay after-fn]
   "Schedule a fn to run after 'delay' seconds."
-  (add-entity world (timer-cmp 0 delay 1 noop after-fn)))
+  (add-entity world (timer 0 delay 1 noop after-fn)))
 
 (defn during [world delay during-fn &opt after-fn]
   "run during fn every 'delay' seconds, then optionally run after fn."
   (default after-fn noop)
-  (add-entity world (timer-cmp 0 delay 1 during-fn after-fn)))
+  (add-entity world (timer 0 delay 1 during-fn after-fn)))
 
 (defn every [world delay after-fn &opt count]
   "Schedule a fn to run every 'delay' seconds, up to count (default is infinity)."
   (default count math/inf)
-  (add-entity world (timer-cmp 0 delay count noop after-fn)))
+  (add-entity world (timer 0 delay count noop after-fn)))
+
 
 # (defn- deep-delta [subject target]
 #   "Creates a table of the same structure of target,
