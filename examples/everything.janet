@@ -1,18 +1,4 @@
-Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small collection of tools & utils for developing games.
-
-### Contents:
-
-- `ecs`: A simple Entity Component System
-- `fsm`: Finite(ish) State Machine
-- `gamestate`: Easy gamestate management.
-- `timers`: Delayed & Schedule functions (requires using ECS)
-- `messages`: Communication between systems (requires using ECS)
-- `tweens`: Some common tweens (stil WIP)
-
-Here's an obligitory example that uses most the stuff here. For more detailed examples...look in the `examples/` folder.
-
-```clojure
-(use junk-drawer)
+(use ./../junk-drawer)
 
 (fsm/define
  colors
@@ -62,4 +48,3 @@ Here's an obligitory example that uses most the stuff here. For more detailed ex
 
 (for i 0 20
   (:update GS 1))
-```
