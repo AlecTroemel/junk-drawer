@@ -11,7 +11,7 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small
 
 Here's an obligitory example that uses most the stuff here. For more detailed examples...look in the `examples/` folder.
 
-```clojure
+```janet
 (use junk-drawer)
 
 (fsm/define

@@ -48,3 +48,13 @@
     (* (- amp)
        (math/sin (- (* 2 (/ math/pi period) (- s 1)) (math/asin (/ 1 amp))))
        (math/exp2 (* 10 (dec s))))))
+
+# https://www.reddit.com/r/gamedev/comments/b4vv5z/ecs_based_architecture_how_to_control_things_like/
+# TODO: add tween component to Entity.
+# It contains what to tween, start/end values, ease type, duration, elapsed time.
+# All the normal state you would have in a tween object.
+# - tween system processes any entities with tween component.
+# Update elapsed time, update whatever value it is tweening.
+# - when elapsed == duration remove tween component.
+(def-component tween
+  [start-val end-val type duration elapsed-time])
