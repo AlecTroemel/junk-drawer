@@ -1,4 +1,4 @@
-(use ./../junk-drawer)
+(use /junk-drawer)
 
 # Register (global) components, these are shared across worlds.
 (def-component position [x y])
@@ -14,7 +14,8 @@
 (add-entity world (position 3 5) (lives 1))
 
 # Systems are a list of queries and a body that does work on them.
-# "dt" (which is passed into a worlds update method) is implicitly available to all systems
+# "dt" (which is passed into a worlds update method) is implicitly available to
+# all systems
 (def-system move
   {moveables [:position :velocity]}
   (each [pos vel] moveables
@@ -79,7 +80,9 @@
         (printf "monster got %j" e)
         (remove-entity wld ent)
         (if (one? (l :cnt))
-          (remove-entity wld e)
+          (do
+            (remove-entity wld e)
+            (printf "good bye %i" (e 0)))
           (update l :cnt dec))))))
 
 (register-system world print-monsters)

@@ -24,18 +24,16 @@
     (:enter self)))
 
 
-(defmacro define [name & states]
+(defmacro define [name states]
   "define a FSM creating function with the given states."
   (with-syms [$state-names]
     ~(defn ,name [initial-state]
-       ,(let [$state-names (map |(keyword (first $)) states)]
-         ~(assert (any? (map |(= $ initial-state) ,$state-names))
-                  (string/format "initial state must be in %q" ,$state-names)))
-       (let [machine (table
-                      :current initial-state
-                      :goto ,goto
-                      ,;(mapcat
-                         |(tuple (keyword (first $)) (struct ;(slice $ 1)))
-                         states))]
+       ,(let [$state-names (keys states)]
+          ~(assert (find |(= $ initial-state) ,$state-names)
+                   (string/format "initial state must be in %q" ,$state-names)))
+       (let [machine (merge
+                       {:current initial-state
+                        :goto ,goto}
+                       ,states)]
          (:goto machine initial-state)
          machine))))

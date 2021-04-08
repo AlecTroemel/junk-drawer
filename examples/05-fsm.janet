@@ -1,26 +1,27 @@
-(use ./../junk-drawer)
+(use /junk-drawer)
 
 # Example 1
 #
 # this macro is used to define the state "factory"
 # The goto method is used to transition between states.
-# the Enter and Leave methods are optional, and are called during the GOTO method.
+# the Enter and Leave methods are optional, and are called during the
+# GOTO method.
 (fsm/define
- colored-warnings
- (green
-  :enter (fn [self] (print "entering green"))
-  :leave (fn [self] (print "leaving green"))
-  :warn  (fn [self]
-           (print "before warn")
-           (:goto self :yellow)
-           (print "after warn")))
- (yellow
-  :enter (fn [self] (print "entering yellow"))
-  :panic |(:goto $ :red)
-  :clear |(:goto $ :green))
- (red
-  :leave (fn [self] (print "leaving red"))
-  :calm  |(:goto $ :yellow)))
+  colored-warnings
+  {:green
+   {:enter (fn [self] (print "entering green"))
+    :leave (fn [self] (print "leaving green"))
+    :warn (fn [self]
+            (print "before warn")
+            (:goto self :yellow)
+            (print "after warn") :)}
+   :yellow
+   {:enter (fn [self] (print "entering yellow"))
+    :panic |(:goto $ :red)
+    :clear |(:goto $ :green)}
+   :red
+   {:leave (fn [self] (print "leaving red"))
+    :calm |(:goto $ :yellow)}})
 
 
 # Create the actual fsm object with the initial state
@@ -41,23 +42,23 @@
 #
 # Just remember that any data will be removed when you leave the state!
 (fsm/define
- jumping-frog
- (standing
-  :boredom 0
-  :update (fn [self dt]
-            (printf "boredom %q" (self :boredom))
-            (if (= 4 (self :boredom))
-              (:jump self)
-              (put self :boredom (inc (self :boredom)))))
-  :jump |(:goto $ :jumping))
- (jumping
-  :airtime 2
-  :update (fn [self dt]
-            (printf "airtime %q" (self :airtime))
-            (if (= 0 (self :airtime))
-              (:land self)
-              (put self :airtime (dec (self :airtime)))))
-  :land |(:goto $ :standing)))
+  jumping-frog
+  {:standing
+   {:boredom 0
+    :update (fn [self dt]
+              (printf "boredom %q" (self :boredom))
+              (if (= 4 (self :boredom))
+                (:jump self)
+                (put self :boredom (inc (self :boredom)))))
+    :jump |(:goto $ :jumping)}
+   :jumping
+   {:airtime 2
+    :update (fn [self dt]
+              (printf "airtime %q" (self :airtime))
+              (if (= 0 (self :airtime))
+                (:land self)
+                (put self :airtime (dec (self :airtime)))))
+    :land |(:goto $ :standing)}})
 
 (def *froggy* (jumping-frog :standing))
 

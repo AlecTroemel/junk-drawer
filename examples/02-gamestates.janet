@@ -1,4 +1,4 @@
-(use ./../junk-drawer)
+(use /junk-drawer)
 
 (def menu
   {:init (fn [self] (print "menu init"))
