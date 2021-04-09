@@ -78,7 +78,7 @@
                                                             duration
                                                             elapsed-time
                                                             complete))
-                                  (pairs val))))))
+                                  (pairs val)))))) # TODO: iterate over end
 
 # TODO: need to get tween start|end when calling recursively
 (defn interpolate [val twn]
