@@ -65,15 +65,29 @@
       (>= (twn :elapsed-time) (twn :duration))
       (put twn :complete true))))
 
+(defn- deep-interpolate [val start end func duration elapsed-time complete]
+  (match (type val)
+    :number (+ val (* (- end val)
+                      (func (/ elapsed-time duration))))
+    :table (merge val
+                  (table ;(mapcat |(tuple ($ 0)
+                                          (deep-interpolate ($ 1)
+                                                            (start ($ 0))
+                                                            (end ($ 0))
+                                                            func
+                                                            duration
+                                                            elapsed-time
+                                                            complete))
+                                  (pairs val))))))
+
 # TODO: need to get tween start|end when calling recursively
 (defn interpolate [val twn]
   "return the val interpolated by the tween."
   (assert (find |(= $ (type val)) [:number :table]) "val is not a supported type")
-  (match (type val)
-    :number (let [s (/ (twn :elapsed-time) (twn :duration))
-                  s-result ((twn :func) s)
-                  diff (- (twn :end) val)]
-              (+ val (* diff s-result)))
-    :table (merge val (table
-                       ;(mapcat |(tuple $0 (interpolate $1 twn))
-                                (pairs val))))))
+  (deep-interpolate val
+                    (twn :start)
+                    (twn :end)
+                    (twn :func)
+                    (twn :duration)
+                    (twn :elapsed-time)
+                    (twn :complete)))
