@@ -55,7 +55,6 @@
   [start end func duration elapsed-time complete])
 
 (def-system update-sys
-  "tick all tweens, marking for completion and deleting when done."
   (tweens [:entity :tween] wld :world)
   (each [ent twn] tweens
     (put twn :elapsed-time (+ (twn :elapsed-time) dt))
@@ -66,14 +65,15 @@
       (>= (twn :elapsed-time) (twn :duration))
       (put twn :complete true))))
 
-(defn- interpolate-number [val twn]
-  (let [s (/ (twn :elapsed-time) (twn :duration))
-        s-result ((twn :func) s)
-        diff (- (twn :end) val)]
-    (+ val (* diff s-result))))
-
-(defn interpolate [val tween]
+# TODO: need to get tween start|end when calling recursively
+(defn interpolate [val twn]
   "return the val interpolated by the tween."
-  (assert (find |(= $ (type val)) [:number]) "val is not a supported type")
+  (assert (find |(= $ (type val)) [:number :table]) "val is not a supported type")
   (match (type val)
-    :number (interpolate-number val tween)))
+    :number (let [s (/ (twn :elapsed-time) (twn :duration))
+                  s-result ((twn :func) s)
+                  diff (- (twn :end) val)]
+              (+ val (* diff s-result)))
+    :table (merge val (table
+                       ;(mapcat |(tuple $0 (interpolate $1 twn))
+                                (pairs val))))))
