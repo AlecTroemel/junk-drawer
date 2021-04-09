@@ -7,3 +7,5 @@
 
 (import ./junk-drawer/messages :as messages :export true)
 (def message messages/message)
+
+(import ./junk-drawer/tweens :as tweens :export true)
