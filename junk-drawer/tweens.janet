@@ -1,3 +1,5 @@
+(use ./ecs)
+
 (defn- flip [f]
   "flip a tween"
   (fn [s & args]
@@ -19,7 +21,7 @@
           $in-out (symbol "in-out-" name)
           $out-in (symbol "out-in-" name)]
       ~(upscope
-        (def ,$in (fn ,name [s] ,;body))
+        (defn ,$in [s] ,;body)
         (def ,$out (flip ,$in))
         (def ,$in-out (chain ,$in ,$out))
         (def ,$out-in (chain ,$out ,$in))))))
@@ -49,12 +51,29 @@
        (math/sin (- (* 2 (/ math/pi period) (- s 1)) (math/asin (/ 1 amp))))
        (math/exp2 (* 10 (dec s))))))
 
-# https://www.reddit.com/r/gamedev/comments/b4vv5z/ecs_based_architecture_how_to_control_things_like/
-# TODO: add tween component to Entity.
-# It contains what to tween, start/end values, ease type, duration, elapsed time.
-# All the normal state you would have in a tween object.
-# - tween system processes any entities with tween component.
-# Update elapsed time, update whatever value it is tweening.
-# - when elapsed == duration remove tween component.
 (def-component tween
-  [start-val end-val type duration elapsed-time])
+  [start end func duration elapsed-time complete])
+
+(def-system update-sys
+  "tick all tweens, marking for completion and deleting when done."
+  (tweens [:entity :tween] wld :world)
+  (each [ent twn] tweens
+    (put twn :elapsed-time (+ (twn :elapsed-time) dt))
+    (cond
+      (get twn :complete)
+      (remove-entity wld ent)
+
+      (>= (twn :elapsed-time) (twn :duration))
+      (put twn :complete true))))
+
+(defn- interpolate-number [val twn]
+  (let [s (/ (twn :elapsed-time) (twn :duration))
+        s-result ((twn :func) s)
+        diff (- (twn :end) val)]
+    (+ val (* diff s-result))))
+
+(defn interpolate [val tween]
+  "return the val interpolated by the tween."
+  (assert (find |(= $ (type val)) [:number]) "val is not a supported type")
+  (match (type val)
+    :number (interpolate-number val tween)))

@@ -1,24 +1,22 @@
-(use ./../src/junk-drawer)
+(use /junk-drawer)
 
-(def-component position [x y])
-(def-component desired-position [x y])
+(def-component height [h])
 
 # First lets just tween a single number
 (def-system simple-tween
-  (positions [:position])
-  (each [pos] positions
-
-    ))
+  (heights [:height :tween])
+  (each [ht twn] heights
+    (put ht :h (tweens/interpolate (ht :h) twn))
+    (pp ht)))
 
 (def world (create-world))
-
+(register-system world tweens/update-sys)
 (register-system world simple-tween)
-
 (add-entity world
-            (position 10 10)
-            (desired-position 20 20))
+            (height 0)
+            (tween 0 10 tweens/in-cubic 10 0 false))
 
 (for i 0 20
   (:update world 1))
 
-# TODO: tween a whole component!
+# TODO: Tween a whole component!
