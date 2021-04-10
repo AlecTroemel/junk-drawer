@@ -7,7 +7,7 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small
 - `gamestate`: Easy gamestate management.
 - `timers`: Delayed & Schedule functions (requires using ECS)
 - `messages`: Communication between systems (requires using ECS)
-- `tweens`: Some common tweens (stil WIP)
+- `tweens`: Some common tweening functions and a way to interpolate with them (mostly requires ECS)
 
 Here's an obligitory example that uses most the stuff here. For more detailed examples...look in the `examples/` folder.
 
