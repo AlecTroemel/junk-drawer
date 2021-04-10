@@ -4,23 +4,27 @@
 # the applet here https://hump.readthedocs.io/en/latest/timer.html#tweening-methods
 # gives a good visualization of what happens.
 #
-# To tween components on an entity, add a tween component to it. Then in a system
-# update your component with the tweens "current" field. When the tween is completed,
-# the interpolate component will be removed from the entity.
-#
-# In this example we will tween the components color using in-cubic over 10 ticks. Note
-# that we dont create the entity with the tween, instead we add it in a seperate system.
+# In this example we will tween the components color using in-cubic over 10 ticks.
 
 (def-component color [r g b])
 (def-tag tween-it)
 
+# Note that we dont create the entity with the tween,
+# instead we add it in a seperate system. When the
+# tween is completed, the "tween" component will be
+# automatically removed from the entity.
 (def-system add-tween
   {colors [:entity :color :tween-it]
    wld :world}
   (each [ent col twn _] colors
     (remove-component wld ent :tween-it)
-    (add-component wld ent (tween col (color 255 0 128) tweens/in-cubic 10))))
+    (add-component wld ent (tween col
+                                  (color 255 0 128)
+                                  tweens/in-cubic
+                                  10))))
 
+# Then we can update your component with the tweens
+# "current" field.
 (def-system tween-colors
   {tweening-colors [:color :tween]}
   (each [col twn] tweening-colors
@@ -42,4 +46,5 @@
             (tween-it))
 
 (for i 0 20
+  (print "tick: " i)
   (:update world 1))
