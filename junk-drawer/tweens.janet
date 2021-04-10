@@ -75,7 +75,7 @@
 
 (defn tween [start end func duration]
   (assert (find |(= $ (type start)) [:number :table])
-          "currently only supports tweening numbers or tables of numbers")
+          "currently only supports tweening numbers or tables")
   @{:start start
     :current start
     :end end
