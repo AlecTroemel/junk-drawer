@@ -9,3 +9,4 @@
 (def message messages/message)
 
 (import ./junk-drawer/tweens :as tweens :export true)
+(def tween tweens/tween)

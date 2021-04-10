@@ -1,3 +1,5 @@
+(use ./ecs)
+
 (defn- flip [f]
   "flip a tween"
   (fn [s & args]
@@ -19,7 +21,7 @@
           $in-out (symbol "in-out-" name)
           $out-in (symbol "out-in-" name)]
       ~(upscope
-        (def ,$in (fn ,name [s] ,;body))
+        (defn ,$in [s] ,;body)
         (def ,$out (flip ,$in))
         (def ,$in-out (chain ,$in ,$out))
         (def ,$out-in (chain ,$out ,$in))))))
@@ -48,3 +50,49 @@
     (* (- amp)
        (math/sin (- (* 2 (/ math/pi period) (- s 1)) (math/asin (/ 1 amp))))
        (math/exp2 (* 10 (dec s))))))
+
+(defn- interpolate [&keys {:start start
+                           :current current
+                           :end end
+                           :func func
+                           :duration duration
+                           :elapsed-time elapsed-time}]
+  (match (type current)
+    :number
+     (+ current (* (- end current)
+                   (func (/ elapsed-time duration))))
+    :table
+     (table
+      ;(mapcat
+        (fn [[key end-val]]
+          [key (interpolate :start (get start key)
+                            :current (get current key)
+                            :end end-val
+                            :func func
+                            :duration duration
+                            :elapsed-time elapsed-time)])
+        (pairs end)))))
+
+(defn tween [start end func duration]
+  (assert (find |(= $ (type start)) [:number :table])
+          "currently only supports tweening numbers or tables")
+  @{:start start
+    :current start
+    :end end
+    :func func
+    :duration duration
+    :elapsed-time 0
+    :complete false})
+
+(def-system update-sys
+  {active-tweens [:entity :tween] wld :world}
+  (each [ent twn] active-tweens
+    (put twn :elapsed-time (+ (twn :elapsed-time) dt))
+    (put twn :current (interpolate ;(kvs twn)))
+
+    (cond
+      (get twn :complete)
+      (remove-component wld ent :tween)
+
+      (>= (twn :elapsed-time) (twn :duration))
+      (put twn :complete true))))
