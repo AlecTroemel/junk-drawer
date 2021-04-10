@@ -32,6 +32,15 @@
   (eachp [name components] (world :database)
     (put components ent nil)))
 
+(defmacro add-component [world ent component]
+  ~(do
+     (assert (get-in world [:database :entity ,ent]) "entity does not exist in world")
+     (put-in ,world [:database ,(keyword (first component)) ,ent] ,component)))
+
+(defn remove-component [world ent component-name]
+  (assert (get-in world [:database :entity ent]) "entity does not exist in world")
+  (put-in world [:database component-name ent] nil))
+
 (defn register-system [world sys]
   "register a system for the query in the world."
   (array/push (get world :systems) sys))

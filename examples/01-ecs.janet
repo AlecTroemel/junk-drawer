@@ -88,6 +88,34 @@
 (register-system world print-monsters)
 
 
+# Components can even be added or removed from existing entities.
+# Note that the example below would probably be better implimented
+# using a FSM.
+(def-tag confused)
+(def-tag enlightened)
+
+(add-entity world
+            (confused))
+
+(def-system remove-n-add
+  {entities [:entity :confused]
+   wld :world}
+  (each [ent cnf] entities
+    (printf "%q is confused" ent)
+    (printf "%q is being switched from confused to enlightened" ent)
+    (remove-component world ent :confused)
+    (add-component world ent (enlightened))))
+
+(register-system world remove-n-add)
+
+(def-system print-enlightened
+  {the-enlightened [:entity :enlightened]}
+  (each [ent enl] the-enlightened
+    (printf "%q is enlightened" ent)))
+
+(register-system world print-enlightened)
+
+
 # then just call update every frame :)
 # We assume dt is just 1 here
 (for i 0 6
