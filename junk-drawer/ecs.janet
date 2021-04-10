@@ -34,7 +34,7 @@
 
 (defmacro add-component [world ent component]
   ~(do
-     (assert (get-in world [:database :entity ,ent]) "entity does not exist in world")
+     (assert (get-in ,world [:database :entity ,ent]) "entity does not exist in world")
      (put-in ,world [:database ,(keyword (first component)) ,ent] ,component)))
 
 (defn remove-component [world ent component-name]

@@ -1,50 +1,45 @@
 (use /junk-drawer)
 
-(def-component height [h])
-
-# First lets just tween a single number
-# the most important part is calling the "tweens/interpolate" method
-# on the tween with the value you wish to tween.
-(print "Example 1")
-
-(def-system simple-tween
-  (heights [:height :tween])
-  (each [ht twn] heights
-    (put ht :h (tweens/interpolate (ht :h) twn))
-    (pp ht)))
-
-(def world (create-world))
-(register-system world tweens/update-sys)
-(register-system world simple-tween)
-(add-entity world
-            (height 0)
-            (tween 0 10 tweens/in-linear 10 0 false))
-
-(for i 0 20
-  (:update world 1))
-
-# you can also Tween a table or Array!
-(print "Example 2")
+# Tweens (short for in-betweening) allows you to interpolate values using predefined functions,
+# the applet here https://hump.readthedocs.io/en/latest/timer.html#tweening-methods
+# gives a good visualization of what happens.
+#
+# To tween components on an entity, add a tween component to it. Then in a system
+# update your component with the tweens "current" field. When the tween is completed,
+# the interpolate component will be removed from the entity.
+#
+# In this example we will tween the components color using in-cubic over 10 ticks. Note
+# that we dont create the entity with the tween, instead we add it in a seperate system.
 
 (def-component color [r g b])
+(def-tag tween-it)
 
-(def-system color-shifter
-  (colors [:color :tween])
-  (each [c twn] colors
-    # cant set c directly, have to update each value individually
-    (each [k v] (pairs (tweens/interpolate c twn))
-      (put c k v))
-    (pp c)))
+(def-system add-tween
+  {colors [:entity :color :tween-it]
+   wld :world}
+  (each [ent col twn _] colors
+    (remove-component wld ent :tween-it)
+    (add-component wld ent (tween col (color 255 0 128) tweens/in-cubic 10))))
+
+(def-system tween-colors
+  {tweening-colors [:color :tween]}
+  (each [col twn] tweening-colors
+    (merge-into col (twn :current))))
+
+(def-system print-colors
+  {colors [:color]}
+  (map pp (flatten colors)))
 
 (def world (create-world))
+
 (register-system world tweens/update-sys)
-(register-system world color-shifter)
+(register-system world add-tween)
+(register-system world tween-colors)
+(register-system world print-colors)
+
 (add-entity world
             (color 0 0 0)
-            (tween (color 255 255 255) 20 tweens/in-cubic 10 0 false))
+            (tween-it))
 
 (for i 0 20
   (:update world 1))
-
-# in practice, you usually wont create the entity with the tween component.
-# Intead you'll want to dynamicaaly add a component to an existing entity

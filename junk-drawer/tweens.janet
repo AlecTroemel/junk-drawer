@@ -51,43 +51,48 @@
        (math/sin (- (* 2 (/ math/pi period) (- s 1)) (math/asin (/ 1 amp))))
        (math/exp2 (* 10 (dec s))))))
 
-(def-component tween
-  [start end func duration elapsed-time complete])
+(defn- interpolate [&keys {:start start
+                           :current current
+                           :end end
+                           :func func
+                           :duration duration
+                           :elapsed-time elapsed-time}]
+  (match (type current)
+    :number
+     (+ current (* (- end current)
+                   (func (/ elapsed-time duration))))
+    :table
+     (table
+      ;(mapcat
+        (fn [[key end-val]]
+          [key (interpolate :start (get start key)
+                            :current (get current key)
+                            :end end-val
+                            :func func
+                            :duration duration
+                            :elapsed-time elapsed-time)])
+        (pairs end)))))
+
+(defn tween [start end func duration]
+  (assert (find |(= $ (type start)) [:number :table])
+          "currently only supports tweening numbers or tables of numbers")
+  @{:start start
+    :current start
+    :end end
+    :func func
+    :duration duration
+    :elapsed-time 0
+    :complete false})
 
 (def-system update-sys
-  (tweens [:entity :tween] wld :world)
-  (each [ent twn] tweens
+  {active-tweens [:entity :tween] wld :world}
+  (each [ent twn] active-tweens
     (put twn :elapsed-time (+ (twn :elapsed-time) dt))
+    (put twn :current (interpolate ;(kvs twn)))
+
     (cond
       (get twn :complete)
-      (remove-entity wld ent)
+      (remove-component wld ent :tween)
 
       (>= (twn :elapsed-time) (twn :duration))
       (put twn :complete true))))
-
-(defn- deep-interpolate [val start end func duration elapsed-time complete]
-  (match (type val)
-    :number (+ val (* (- end val)
-                      (func (/ elapsed-time duration))))
-    :table (merge val
-                  (table ;(mapcat |(tuple ($ 0)
-                                          (deep-interpolate ($ 1)
-                                                            (start ($ 0))
-                                                            (end ($ 0))
-                                                            func
-                                                            duration
-                                                            elapsed-time
-                                                            complete))
-                                  (pairs val)))))) # TODO: iterate over end
-
-# TODO: need to get tween start|end when calling recursively
-(defn interpolate [val twn]
-  "return the val interpolated by the tween."
-  (assert (find |(= $ (type val)) [:number :table]) "val is not a supported type")
-  (deep-interpolate val
-                    (twn :start)
-                    (twn :end)
-                    (twn :func)
-                    (twn :duration)
-                    (twn :elapsed-time)
-                    (twn :complete)))
