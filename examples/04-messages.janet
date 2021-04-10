@@ -1,4 +1,4 @@
-(use ./../junk-drawer)
+(use /junk-drawer)
 
 (def world (create-world))
 
@@ -20,12 +20,13 @@
 # dont forget to consume the message after youre done with it, otherwise
 # you will get it on the next loop.
 (def-system reciever-sys
-  (wld :world
-       msgs [:message :my-tick]
-       movables [:position :velocity])
+  {wld :world
+   msgs [:message :my-tick]
+   movables [:position :velocity]}
   (if (> (length msgs) 0)
     (each [msg] msgs
-      (pp "consume it")
+      (prin "consume ")
+      (pp (msg :content))
       (messages/consume msg))
     (print "nothing to consume")))
 

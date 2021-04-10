@@ -1,20 +1,23 @@
-(use ./../junk-drawer)
+(use /junk-drawer)
 
 # Register (global) components, these are shared across worlds.
 (def-component position [x y])
 (def-component velocity [x y])
+(def-component lives [cnt])
 
 # create a world to hold your entities + systems
 (def world (create-world))
 
 # Add entities to a world
-(add-entity world (position 10 10) (velocity (- 1) (- 1)))
-(add-entity world (position 3 5))
+(add-entity world (position 10 10) (velocity -1 -1) (lives 2))
+(add-entity world (position 8 8) (velocity -2 -2) (lives 1))
+(add-entity world (position 3 5) (lives 1))
 
 # Systems are a list of queries and a body that does work on them.
-# "dt" (which is passed into a worlds update method) is implicitly available to all systems
+# "dt" (which is passed into a worlds update method) is implicitly available to
+# all systems
 (def-system move
-  (moveables [:position :velocity])
+  {moveables [:position :velocity]}
   (each [pos vel] moveables
     (put pos :x (+ (pos :x) (* dt (vel :x))))
     (put pos :y (+ (pos :y) (* dt (vel :y))))))
@@ -24,11 +27,13 @@
 
 # Here's a system that has multiple queries
 (def-system print-position
-  (poss [:position] vels [:velocity])
+  {poss [:position] vels [:velocity] livs [:lives]}
   (print "positions:")
   (each [pos] poss (pp pos))
   (print "velocities:")
-  (each [vel] vels (pp vel)))
+  (each [vel] vels (pp vel))
+  (print "lives:")
+  (each [liv] livs (pp liv)))
 
 (register-system world print-position)
 
@@ -38,7 +43,7 @@
 # In this example the entity will be destroyed if its x,y coords both become 0.
 # Given the entities defined above this should take 10 iterations
 (def-system remove-dead
-  (entities [:entity :position] wld :world)
+  {entities [:entity :position] wld :world}
   (each [ent pos] entities
     (when (deep= pos @{:x 0 :y 0})
       (print "time to die entity id " ent)
@@ -52,21 +57,68 @@
 (def-tag monster)
 
 (add-entity world
- (position 10 10)
- (velocity 1 1)
- (monster))
+            (position 0 0)
+            (velocity 1 1)
+            (monster))
+
+(add-entity world
+            (position 0 5)
+            (velocity 1 0)
+            (monster))
 
 (def-system print-monsters
-  (monsters [:entity :position :monster])
+  {monsters [:entity :position :monster]
+   entities [:entity :position :lives]
+   wld :world}
   (each [ent pos] monsters
-    ()))
+    (prin "Monster ")
+    (pp pos)
+    (if-let [[e]
+             (filter (fn [[e p l]]
+                       (and (not= ent e) (deep= p pos))) entities)]
+      (when-let [[i _ l] e]
+        (printf "monster got %j" e)
+        (remove-entity wld ent)
+        (if (one? (l :cnt))
+          (do
+            (remove-entity wld e)
+            (printf "good bye %i" (e 0)))
+          (update l :cnt dec))))))
 
 (register-system world print-monsters)
 
 
+# Components can even be added or removed from existing entities.
+# Note that the example below would probably be better implimented
+# using a FSM.
+(def-tag confused)
+(def-tag enlightened)
+
+(add-entity world
+            (confused))
+
+(def-system remove-n-add
+  {entities [:entity :confused]
+   wld :world}
+  (each [ent cnf] entities
+    (printf "%q is confused" ent)
+    (printf "%q is being switched from confused to enlightened" ent)
+    (remove-component world ent :confused)
+    (add-component world ent (enlightened))))
+
+(register-system world remove-n-add)
+
+(def-system print-enlightened
+  {the-enlightened [:entity :enlightened]}
+  (each [ent enl] the-enlightened
+    (printf "%q is enlightened" ent)))
+
+(register-system world print-enlightened)
+
+
 # then just call update every frame :)
 # We assume dt is just 1 here
-(for i 0 15
+(for i 0 6
   (print "i: " i)
   (:update world 1)
-  (print ""))
+  (print))

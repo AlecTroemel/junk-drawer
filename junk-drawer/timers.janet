@@ -6,7 +6,7 @@
   [time limit count during after])
 
 (def-system update-sys
-  (timers [:entity :timer] wld :world)
+  {timers [:entity :timer] wld :world}
   (each [ent tmr] timers
     (put tmr :time (+ (tmr :time) dt))
     ((tmr :during) wld dt)
