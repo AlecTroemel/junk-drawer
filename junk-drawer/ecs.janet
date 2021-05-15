@@ -25,7 +25,8 @@
        ,;(map
            |(quasiquote (put-in ,$db [,(keyword (first $)) ,$id] ,$))
            components)
-       (put world :id-counter (inc ,$id)))))
+       (put world :id-counter (inc ,$id))
+       ,$id)))
 
 (defn remove-entity [world ent]
   "remove an entity ID from the world."
