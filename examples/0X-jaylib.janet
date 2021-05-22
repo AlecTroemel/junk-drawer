@@ -1,6 +1,5 @@
 (use jaylib)
-(import /../src/ecs :prefix "")
-(import /../src/gamestate)
+(use /junk-drawer)
 
 (def black (map |(/ $ 255) [50 47 41]))
 (def white (map |(/ $ 255) [177 174 168]))
@@ -10,18 +9,20 @@
 (def GS (gamestate/init))
 
 # Components
-(def-component position [x y])
-(def-component velocity [x y])
-(def-component circle [radius color])
+(def-component position :x :number :y :number)
+(def-component velocity :x :number :y :number)
+(def-component circle :radius :number :color :any)
 
 # System Callbacks
-(defn sys-move [q dt]
-  (each [pos vel] q
+(def-system sys-move
+  {moveables [:position :velocity]}
+  (each [pos vel] moveables
     (put pos :x (+ (pos :x) (* dt (vel :x))))
     (put pos :y (+ (pos :y) (* dt (vel :y))))))
 
-(defn sys-draw-circle [q dt]
-  (each [pos circle] q
+(def-system sys-draw-circle
+  {circles [:position :circle]}
+  (each [pos circle] circles
     (draw-circle
      (pos :x) (pos :y)
      (circle :radius) (circle :color))))
@@ -40,21 +41,17 @@
            (let [world (get self :world)]
              # Entities
              (add-entity world
-                         (position 100.0 100.0)
-                         (velocity 1 2)
-                         (circle 40 white))
+                         (position :x 100.0 :y 100.0)
+                         (velocity :x 1 :y 2)
+                         (circle :radius 40 :color white))
              (add-entity (self :world)
-                         (position 200.0 50.0)
-                         (velocity (- 2) 4)
-                         (circle 40 white))
+                         (position :x 200.0 :y 50.0)
+                         (velocity :x (- 2) :y 4)
+                         (circle :radius 40 :color white))
 
              # Systems
-             (register-system (self :world)
-                              [:position :velocity]
-                              sys-move)
-             (register-system (self :world)
-                              [:position :circle]
-                              sys-draw-circle)))
+             (register-system (self :world) sys-move)
+             (register-system (self :world) sys-draw-circle)))
 
    :update (fn game-update [self dt]
              (:update (self :world) dt)

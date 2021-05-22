@@ -1,17 +1,27 @@
 (use /junk-drawer)
 
 # Register (global) components, these are shared across worlds.
-(def-component position [x y])
-(def-component velocity [x y])
-(def-component lives [cnt])
+# the types given can by any of the ones listed here https://janet-lang.org/api/index.html#type
+# or ":any", for any type!
+(def-component position :x :number :y :number)
+(def-component velocity :x :number :y :number)
+(def-component lives :count :number)
 
 # create a world to hold your entities + systems
 (def world (create-world))
 
 # Add entities to a world
-(add-entity world (position 10 10) (velocity -1 -1) (lives 2))
-(add-entity world (position 8 8) (velocity -2 -2) (lives 1))
-(add-entity world (position 3 5) (lives 1))
+(add-entity world
+            (position :x 10 :y 10)
+            (velocity :x -1 :y -1)
+            (lives :count 2))
+(add-entity world
+            (position :x 8 :y 8)
+            (velocity :x -2 :y -2)
+            (lives :count 1))
+(add-entity world
+            (position :x 3 :y 5)
+            (lives :count 1))
 
 # Systems are a list of queries and a body that does work on them.
 # "dt" (which is passed into a worlds update method) is implicitly available to
@@ -57,13 +67,13 @@
 (def-tag monster)
 
 (add-entity world
-            (position 0 0)
-            (velocity 1 1)
+            (position :x 0 :y 0)
+            (velocity :x 1 :y 1)
             (monster))
 
 (add-entity world
-            (position 0 5)
-            (velocity 1 0)
+            (position :x 0 :y 5)
+            (velocity :x 1 :y 0)
             (monster))
 
 (def-system print-monsters
@@ -79,11 +89,11 @@
       (when-let [[i _ l] e]
         (printf "monster got %j" e)
         (remove-entity wld ent)
-        (if (one? (l :cnt))
+        (if (one? (l :count))
           (do
             (remove-entity wld e)
             (printf "good bye %i" (e 0)))
-          (update l :cnt dec))))))
+          (update l :count dec))))))
 
 (register-system world print-monsters)
 

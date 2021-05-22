@@ -1,9 +1,20 @@
-(defmacro def-component [name fields]
+(defmacro def-component [name & fields]
   "Define a new component with the specified fields."
-  ~(defn ,name ,fields
-     ,(zipcoll
-        (map |(keyword $) fields)
-        fields)))
+  (let [type-table (table ;fields)
+                   def-array (mapcat |[$ (symbol $)] (keys type-table))]
+    ~(defn ,name [&keys ,(struct ;def-array)]
+       # assert types of the component fields
+       ,;(map
+          (fn [[key field-type]]
+            ~(assert
+              (= (type ,(symbol key)) ,field-type)
+              ,(string/format "%q must be of type %q" key field-type)))
+          (filter
+           |(not= (last $) :any)
+           (pairs type-table)))
+
+       # return the component
+       ,(table ;def-array))))
 
 (defmacro def-tag [name]
   "Define a new tag (component with no data)."
