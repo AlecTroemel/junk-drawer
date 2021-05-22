@@ -3,7 +3,11 @@
 (defn- noop [& args] nil)
 
 (def-component timer
-  [time limit count during after])
+  :time :number
+  :limit :number
+  :count :number
+  :during :function
+  :after :function)
 
 (def-system update-sys
   {timers [:entity :timer] wld :world}
@@ -21,17 +25,32 @@
 
 (defn after [world delay after-fn]
   "Schedule a fn to run after 'delay' seconds."
-  (add-entity world (timer 0 delay 1 noop after-fn)))
+  (add-entity world
+              (timer :time 0
+                     :limit delay
+                     :count 1
+                     :during noop
+                     :after after-fn)))
 
 (defn during [world delay during-fn &opt after-fn]
   "run during fn every 'delay' seconds, then optionally run after fn."
   (default after-fn noop)
-  (add-entity world (timer 0 delay 1 during-fn after-fn)))
+  (add-entity world
+              (timer :time 0
+                     :limit delay
+                     :count 1
+                     :during during-fn
+                     :after after-fn)))
 
 (defn every [world delay after-fn &opt count]
   "Schedule a fn to run every 'delay' seconds, up to count (default is infinity)."
   (default count math/inf)
-  (add-entity world (timer 0 delay count noop after-fn)))
+  (add-entity world
+              (timer :time 0
+                     :limit delay
+                     :count count
+                     :during noop
+                     :after after-fn)))
 
 
 # (defn- deep-delta [subject target]

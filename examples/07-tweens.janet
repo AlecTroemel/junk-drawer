@@ -6,7 +6,10 @@
 #
 # In this example we will tween the components color using in-cubic over 10 ticks.
 
-(def-component color [r g b])
+(def-component color
+  :r :number
+  :g :number
+  :b :number)
 (def-tag tween-it)
 
 # Note that we dont create the entity with the tween,
@@ -19,7 +22,7 @@
   (each [ent col twn _] colors
     (remove-component wld ent :tween-it)
     (add-component wld ent (tween col
-                                  (color 255 0 128)
+                                  (color :r 255 :g 0 :b 128)
                                   tweens/in-cubic
                                   10))))
 
@@ -42,7 +45,7 @@
 (register-system world print-colors)
 
 (add-entity world
-            (color 0 0 0)
+            (color :r 0 :g 0 :b 0)
             (tween-it))
 
 (for i 0 20

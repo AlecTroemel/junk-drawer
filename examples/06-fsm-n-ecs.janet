@@ -14,17 +14,17 @@
    :red
    {:calm |(:goto $ :yellow)}})
 
-(def-component position [x y])
+(def-component position :x :number :y :number)
 
 (def world (create-world))
 
 (register-system world timers/update-sys)
 
 (add-entity world
-            (position 5 5)
+            (position :x 5 :y 5)
             (colored-warnings :green))
 (add-entity world
-            (position 3 3)
+            (position :x 3 :y 3)
             (colored-warnings :yellow))
 (timers/every world 2
               (fn [{:database {:colored-warnings cw}} _]
