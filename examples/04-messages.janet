@@ -25,7 +25,7 @@
    msgs [:message :my-tick]
    movables [:position :velocity]}
   (if (> (length msgs) 0)
-    (each [msg] (sorted-by |(< ($1 :created) ($2 :created)) msgs)
+    (each [msg] (sorted-by |(get-in $ [0 :created]) msgs)
       (prin "consume ")
       (pp (msg :content))
       (messages/consume msg))
