@@ -15,7 +15,7 @@
   ~(add-entity ,world
                 (message :content ,content
                          :consumed false
-                         :created ,(os/time))
+                         :created (os/time))
                 ,;(map |(tuple $) tags)))
 
 (defn consume [msg]
