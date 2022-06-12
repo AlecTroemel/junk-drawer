@@ -2,7 +2,8 @@
 
 (def-component message
   :content :any
-  :consumed :boolean)
+  :consumed :boolean
+  :created :number)
 
 (def-system update-sys
   {messages [:entity :message] wld :world}
@@ -12,7 +13,9 @@
 (defmacro send [world content & tags]
   "create a message entity with content & the tag components"
   ~(add-entity ,world
-                (message :content ,content :consumed false)
+                (message :content ,content
+                         :consumed false
+                         :created ,(os/time))
                 ,;(map |(tuple $) tags)))
 
 (defn consume [msg]

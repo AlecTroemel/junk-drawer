@@ -18,13 +18,14 @@
 
 # then you may query for that specific message.
 # dont forget to consume the message after youre done with it, otherwise
-# you will get it on the next loop.
+# you will get it on the next loop. This example also sorts messages by
+# when they were created.
 (def-system reciever-sys
   {wld :world
    msgs [:message :my-tick]
    movables [:position :velocity]}
   (if (> (length msgs) 0)
-    (each [msg] msgs
+    (each [msg] (sorted-by |(< ($1 :created) ($2 :created)) msgs)
       (prin "consume ")
       (pp (msg :content))
       (messages/consume msg))
