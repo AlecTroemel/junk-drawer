@@ -12,11 +12,13 @@
 
 (defmacro send [world content & tags]
   "create a message entity with content & the tag components"
-  ~(add-entity ,world
-                (message :content ,content
-                         :consumed false
-                         :created (os/clock))
-                ,;(map |(tuple $) tags)))
+  (with-syms [$wld]
+    ~(let [,$wld ,world]
+       (add-entity ,$wld
+                    (message :content ,content
+                             :consumed false
+                             :created (os/clock))
+                    ,;(map |(tuple $) tags)))))
 
 (defn consume [msg]
   (put msg :consumed true))

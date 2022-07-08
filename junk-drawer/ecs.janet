@@ -35,14 +35,15 @@
 
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
-  (with-syms [$id $db]
-    ~(let [,$id (get world :id-counter)
-           ,$db (get world :database)]
+  (with-syms [$id $db $wld]
+    ~(let [,$wld ,world
+           ,$id (get ,$wld :id-counter)
+           ,$db (get ,$wld :database)]
        (put-in ,$db [:entity ,$id] ,$id)
        ,;(map
            |(quasiquote (put-in ,$db [,(keyword (first $)) ,$id] ,$))
            components)
-       (put world :id-counter (inc ,$id))
+       (put ,$wld :id-counter (inc ,$id))
        ,$id)))
 
 (defn remove-entity [world ent]
@@ -51,9 +52,10 @@
     (put components ent nil)))
 
 (defmacro add-component [world ent component]
-  ~(do
-     (assert (get-in ,world [:database :entity ,ent]) "entity does not exist in world")
-     (put-in ,world [:database ,(keyword (first component)) ,ent] ,component)))
+  (with-syms [$wld]
+    ~(let [,$wld ,world]
+       (assert (get-in ,$wld [:database :entity ,ent]) "entity does not exist in world")
+       (put-in ,$wld [:database ,(keyword (first component)) ,ent] ,component))))
 
 (defn remove-component [world ent component-name]
   (assert (get-in world [:database :entity ent]) "entity does not exist in world")
