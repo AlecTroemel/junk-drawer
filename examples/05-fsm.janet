@@ -6,17 +6,20 @@
 # The goto method is used to transition between states.
 # the Enter and Leave methods are optional, and are called during the
 # GOTO method.
+#
+# any additional arguments passed into the goto method will be passed in
+# to the Enter method.
 (fsm/define
   colored-warnings
   {:green
    {:enter (fn [self] (print "entering green"))
     :leave (fn [self] (print "leaving green"))
-    :warn (fn [self]
+    :warn (fn [self name]
             (print "before warn")
-            (:goto self :yellow)
+            (:goto self :yellow name)
             (print "after warn") :)}
    :yellow
-   {:enter (fn [self] (print "entering yellow"))
+   {:enter (fn [self name] (printf "entering yellow, %s be careful!" name))
     :panic |(:goto $ :red)
     :clear |(:goto $ :green)}
    :red
@@ -28,7 +31,7 @@
 (print "Example 1 output:")
 (def *state* (colored-warnings :green))
 (print "start: " (*state* :current))
-(:warn *state*)
+(:warn *state* "Alec")
 (:panic *state*)
 (:calm *state*)
 (:clear *state*)
