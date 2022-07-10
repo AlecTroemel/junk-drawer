@@ -1,4 +1,4 @@
-(defn- goto [self to]
+(defn- goto [self to & args]
   (assert (self to) (string/format "%q is not a valid state" to))
 
   # Call leave method on old state
@@ -21,7 +21,7 @@
 
   # call enter on new state
   (when (self :enter)
-    (:enter self)))
+    (:enter self ;args)))
 
 
 (defmacro define [name states]
