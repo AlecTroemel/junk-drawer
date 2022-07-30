@@ -1,125 +1,129 @@
-# Based on --> https://www.geeksforgeeks.org/sparse-set/
 # Super minimal sparse set implementation with int values
 #
-# More https://research.swtch.com/
+# links
+# https://www.geeksforgeeks.org/sparse-set/
+# https://research.swtch.com/
+# https://gist.github.com/dakom/82551fff5d2b843cbe1601bbaff2acbf
 
-(defn init [max-val capacity]
-  @{:dense (array/new-filled capacity)
-    :sparse (array/new-filled (+ max-val 1))
-    :max-val max-val
-    :capacity capacity
-    :n 0})
 
-(defn search [self x]
-  "If element is present, returns index of element in :dense, Else returns -1."
+(defn debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
+  "pretty Prints contents of set."
+  (print "entities:")
+  (for i 0 n
+    (printf "%q -> %q" (entities i) (components i))))
+
+(defn search [self eid]
+  "If element is present, returns index of element in :entities, Else returns -1."
   (cond
     # Searched element must be in range
-    (> x (self :max-val)) -1
+    (> eid (self :max-val)) -1
 
     # The first condition verifies that 'x' is
     # within 'n' in this set and the second
     # condition tells us that it is present in
     # the data structure.
-    (and (< (get-in self [:sparse x]) (self :n))
-         (= (get-in self [:dense (get-in self [:sparse x])]) x))
-    (get-in self [:sparse x])
+    (and (< (get-in self [:entity-indices eid]) (self :n))
+         (= (get-in self [:entities (get-in self [:entity-indices eid])]) eid))
+    (get-in self [:entity-indices eid])
 
     # Not found
     -1))
 
-(defn insert [self x]
+(defn insert [self eid cmp-data]
   "Inserts a new element into set."
-  # rule out Corner cases
-  # - x must not be out of range
-  # - dense[] should not be full
-  # - x should not already be present
-  (when (and (< x (self :max-value))
-             (<= (self :n) (self :capacity))
-             (= (search self x) -1))
-    (put (self :dense) (self :n) x)
-    (put (self :sparse) x (self :n))
+  (when-let [{:n n
+              :max-val max-val
+              :capacity capacity
+              :entities entities
+              :entity-indices entity-indices
+              :components components} self
+
+             eid-in-range? (< eid max-val)
+             ents-not-full? (<= n capacity)
+             eid-not-present? (= (search self eid) -1)]
+
+    (put entity-indices eid n)
+    (put entities n eid)
+    (put components n cmp-data)
+
     (+= (self :n) 1)))
 
-(defn delete [self x]
+(defn delete [self eid]
   "Deletes an element."
-  (when-let [element-exists (> (search self x) 0)
-             {:n n :dense dense :sparse sparse} self
-             temp (dense (- n 1))]
-    (put dense (sparse x) temp)
-    (put sparse temp (sparse x))
+  (when-let [element-exists? (> (search self eid) 0)
+
+             {:n n
+              :entities entities
+              :entity-indices entity-indices
+              :components components} self
+
+             temp-ent (entities (- n 1))
+             temp-cmp (components (- n 1))
+             dense-i (entity-indices eid)]
+
+    (put entities dense-i temp-ent)
+    (put components dense-i temp-cmp)
+    (put entity-indices temp-ent dense-i)
+
     (-= (self :n) 1)))
 
 (defn clear [self]
   "Removes all elements from set."
   (put self :n 0))
 
-(defn ss-print [{:dense dense :n n}]
-  "pretty Prints contents of set."
-  (prin "{ ")
-  (for i 0 n (prinf "%q, " (dense i)))
-  (prin " }\n"))
+(defn init [max-val capacity]
+  (table/setproto
+   @{:max-val max-val
+     :capacity capacity
+     :n 0
 
-(defn intersection [s1 s2]
-  "compute new set which is the intersection of this set with s"
-  (let [i-cap (min (s1 :n) (s2 :n))
-        i-max-val (max (s2 :max-val) (s1 :max-val))
-        result (init i-cap i-max-val)]
+     # Sparse list, The index (not the value) of this sparse array is itself
+     # the entity id.
+     :entity-indices (array/new-filled (+ max-val 1))
 
-    (if (< (s1 :n) (s2 :n))
-      # Search every element of "s1" in 's2'.
-      (for i 0 (s1 :n)
-        (when (> (search s2 (get-in s1 [:dense i])) 0)
-          (insert result (get-in s1 [:dense i]))))
-      # Search every element of "s2" in 's1'.
-      (for i 0 (s2 :n)
-        (when (> (search s1 (get-in s2 [:dense i])) 0)
-          (insert result (get-in s2 [:dense i])))))
+     # Dense list of integers, The index doesn't have inherent meaning, other
+     # than it must be correct from entity-indices.
+     :entities (array/new-filled capacity)
 
-    result))
+     # Dense list of component type, It is aligned with EntityList such that the
+     # element at EntityList[N] has component data of ComponentList[N]
+     :components (array/new-filled capacity)}
+   @{:search search
+     :insert insert
+     :delete delete
+     :clear clear
+     :debug-print debug-print}))
 
-(defn union [s1 s2]
-  "A function to find union of two sets, Time Complexity O(n1+n2)"
-  (let [u-cap (+ (s1 :n) (s2 :n))
-        u-max-val (max (s2 :max-val) (s1 :max-val))
-        result (init u-cap u-max-val)]
+(defn smallest-pool-length [pools]
+  "returns length (n) of smallest pool"
+  (get (reduce2 |(if (< (get-in $0 [1 :n])
+                        (get-in $1 [1 :n]))
+                   $0 $1)
+                pools)
+       :n))
 
-    (for i 0 (s1 :n)
-      (insert result (get-in s1 [:dense i])))
+(defn every-has? [pools eid]
+  "True if every pool has eid"
+  (every? (map |(not= (:search $ eid) -1)
+               pools)))
 
-    (for i 0 (s2 :n)
-      (insert result (get-in s2 [:dense i])))
+(defn intersection-entities [pools]
+  "return list of entities which all pools contain."
+  (mapcat |(if (every-has? pools $) [$] [])
+          (range 0 (smallest-pool-length pools))))
 
-    result))
+(defn view-entry [pools eid]
+  "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
+  (tuple eid ;(map |(get-in $ [:components eid]) pools)))
 
-# Example
-(var s1 (init 100 5))
-(insert s1 5)
-(insert s1 3)
-(insert s1 9)
-(insert s1 10)
+(defn view [database query]
+  "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
+  # check that each component in query actually exists in DB
+  (each q query
+    (when (nil? (database q))
+      (errorf "%q not a component in the databse" q)))
 
-(printf "s1")
-(ss-print s1)
-
-(if-let [index (search s1 3)
-         found (> index 0)]
-  (printf "3 is founda t index %q" index))
-
-(printf "deleting 9 from s1")
-(delete s1 9)
-(ss-print s1)
-
-(var s2 (init 1000 6))
-(insert s2 4)
-(insert s2 3)
-(insert s2 7)
-(insert s2 200)
-
-(printf "\ns2")
-(ss-print s2)
-
-(printf "\nIntersection of set1 and set2")
-(ss-print (intersection s1 s2))
-
-(printf "\nUnion of set1 and set2")
-(ss-print (union s1 s2))
+  # query DB pools
+  (let [pools (map |(database $) query)
+        entities (intersection-entities pools)]
+    (map |(view-entry pools $) entities)))
