@@ -1,3 +1,5 @@
+(import ./sparse-set :as ss)
+
 (defmacro def-component [name & fields]
   "Define a new component with the specified fields."
   (if (= 1 (length fields))
@@ -33,50 +35,82 @@
        ,(values queries)
        (fn [,;(keys queries) dt] ,;body))))
 
+(defmacro add-component [world ent component]
+  (with-syms [$wld $db $comp-id]
+    ~(let [,$wld ,world
+           ,$db (get ,$wld :database)
+           ,$comp-id ,(keyword (first component))]
+
+       (when (nil? (,$db ,$comp-id))
+         (put ,$db ,$comp-id ,(ss/init 1000 1000)))
+
+       (:insert (,$db ,$comp-id) ,ent ,component))))
+
+(defn remove-component [world ent component-name]
+  (let [pool (get-in world [:database component-name])]
+    (assert (not (nil? pool)) "component does not exist in world")
+    (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
+    (:delete pool ent)))
+
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
   (with-syms [$id $db $wld]
     ~(let [,$wld ,world
            ,$id (get ,$wld :id-counter)
            ,$db (get ,$wld :database)]
-       (put-in ,$db [:entity ,$id] ,$id)
-       ,;(map
-           |(quasiquote (put-in ,$db [,(keyword (first $)) ,$id] ,$))
-           components)
+       ,;(map |(quasiquote (add-component ,$wld ,$id ,$)) components)
        (put ,$wld :id-counter (inc ,$id))
        ,$id)))
 
 (defn remove-entity [world ent]
   "remove an entity ID from the world."
-  (eachp [name components] (world :database)
-    (put components ent nil)))
-
-(defmacro add-component [world ent component]
-  (with-syms [$wld]
-    ~(let [,$wld ,world]
-       (assert (get-in ,$wld [:database :entity ,ent]) "entity does not exist in world")
-       (put-in ,$wld [:database ,(keyword (first component)) ,ent] ,component))))
-
-(defn remove-component [world ent component-name]
-  (assert (get-in world [:database :entity ent]) "entity does not exist in world")
-  (put-in world [:database component-name ent] nil))
+  (eachp [name pool] (world :database)
+         (:delete pool ent)))
 
 (defn register-system [world sys]
   "register a system for the query in the world."
   (array/push (get world :systems) sys))
 
-(defn- query-database [db query]
-  (mapcat
-    (fn [key]
-      (let [result (map |(get-in db [$ key]) query)]
-        (if (every? result) [result] [])))
-    (keys (get db :entity))))
+(defn smallest-pool-length [pools]
+  "returns length (n) of smallest pool"
+  (get (reduce2 |(if (< (get-in $0 [1 :n])
+                        (get-in $1 [1 :n]))
+                   $0 $1)
+                pools)
+       :n))
+
+(defn every-has? [pools eid]
+  "True if every pool has eid"
+  (every? (map |(not= (:search $ eid) -1)
+               pools)))
+
+(defn intersection-entities [pools]
+  "return list of entities which all pools contain."
+  (mapcat |(if (every-has? pools $) [$] [])
+          (range 0 (smallest-pool-length pools))))
+
+(defn view-entry [pools eid]
+  "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
+  (tuple ;(map |(($ :components) eid) pools)))
+
+(defn view [database query]
+  "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
+  (let [pools (map |(match $
+                      :entity {:components (fn [eid] eid)
+                               :search (fn [self eid] true)
+                               :n math/inf}
+                      (database $)) query)]
+
+    # If any part of the query is not a registered component, view must be empty
+    (if (empty? (filter nil? pools))
+      (map |(view-entry pools $) (intersection-entities pools))
+      [])))
 
 (defn- query-result [world query]
   "either return a special query, or the results of the ecs query"
   (match query
     :world world
-    [_] (query-database (world :database) query)))
+    [_] (view (world :database) query)))
 
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
