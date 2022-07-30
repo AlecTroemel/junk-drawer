@@ -40,7 +40,6 @@
     ~(let [,$wld ,world
            ,$db (get ,$wld :database)
            ,$comp-id ,(keyword (first component))]
-
        (when (nil? (,$db ,$comp-id))
          (put ,$db ,$comp-id ,(ss/init 1000 1000)))
 
@@ -58,8 +57,11 @@
     ~(let [,$wld ,world
            ,$id (get ,$wld :id-counter)
            ,$db (get ,$wld :database)]
+
        ,;(map |(quasiquote (add-component ,$wld ,$id ,$)) components)
+
        (put ,$wld :id-counter (inc ,$id))
+
        ,$id)))
 
 (defn remove-entity [world ent]
@@ -96,7 +98,7 @@
 (defn view [database query]
   "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
   (let [pools (map |(match $
-                      :entity {:components (fn [eid] eid)
+                      :entity {:components identity
                                :search (fn [self eid] true)
                                :n math/inf}
                       (database $)) query)]
@@ -117,7 +119,8 @@
   (loop [(queries func)
          :in (self :systems)
          :let [queries-results (map |(query-result self $) queries)]]
-    (func ;queries-results dt)))
+    (when (some |(not (empty? $)) queries-results)
+      (func ;queries-results dt))))
 
 (defn create-world []
   @{:id-counter 0
