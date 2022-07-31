@@ -2,6 +2,9 @@
 
 (defn sparse-set-debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
   "pretty Prints contents of set."
+  (print "entities-indices:")
+  (pp entity-indices)
+
   (print "entities:")
   (for i 0 n
     (printf "%q -> %q" (entities i) (components i))))
@@ -96,27 +99,21 @@
 
 (defmacro def-component [name & fields]
   "define a new component with the specified fields."
-  (if (= 1 (length fields))
-    ~(defn ,name [value]
-       (assert
-        (= (type value) ,(first fields))
-        (string/format "%q must be of type %q" value ,(first fields)))
-       value)
-    (let [type-table (table ;fields)
-          def-array (mapcat |[$ (symbol $)] (keys type-table))]
-      ~(defn ,name [&keys ,(struct ;def-array)]
-         # assert types of the component fields
-         ,;(map
-            (fn [[key field-type]]
-              ~(assert
-                (= (type ,(symbol key)) ,field-type)
-                ,(string/format "%q must be of type %q" key field-type)))
-            (filter
-             |(not= (last $) :any)
-             (pairs type-table)))
+  (let [type-table (table ;fields)
+        def-array (mapcat |[$ (symbol $)] (keys type-table))]
+    ~(defn ,name [&keys ,(struct ;def-array)]
+       # assert types of the component fields
+       ,;(map
+          (fn [[key field-type]]
+            ~(assert
+              (= (type ,(symbol key)) ,field-type)
+              ,(string/format "%q must be of type %q" key field-type)))
+          (filter
+           |(not= (last $) :any)
+           (pairs type-table)))
 
-         # return the component
-         ,(table ;def-array)))))
+       # return the component
+       ,(table ;def-array))))
 
 (defmacro def-tag [name]
   "define a new tag (component with no data)."
@@ -165,23 +162,39 @@
   "register a system for the query in the world."
   (array/push (get world :systems) sys))
 
-(defn smallest-pool-length [pools]
+(defn smallest-pool [pools]
   "returns length (n) of smallest pool"
-  (get (reduce2 |(if (< (get-in $0 [1 :n])
-                        (get-in $1 [1 :n]))
-                   $0 $1)
-                pools)
-       :n))
+  (reduce2 |(if (< (get-in $0 [1 :n])
+                   (get-in $1 [1 :n]))
+              $0 $1)
+           pools))
+
+# (defn every-has? [pools eid]
+#   "true if every pool has eid"
+#   (each p pools
+#     (printf "\n eid: %q" eid)
+#     (:debug-print p)
+#     (printf "found? %q" (:search p eid))
+#     )
+
+#   (every? (map |(not= (:search $ eid) -1)
+#                pools)))
 
 (defn every-has? [pools eid]
-  "true if every pool has eid"
-  (every? (map |(not= (:search $ eid) -1)
-               pools)))
+  # (each pool pools
+  #   (printf "entities %q" (pool :entities))
+  #   (printf "entity at index %q -> %q" i (get-in pool [:entities i]))
+  #   (printf "search for %q -> %q" i ))
+
+  (every? (map |(not= -1 (:search $ eid)) pools)))
 
 (defn intersection-entities [pools]
   "return list of entities which all pools contain."
-  (mapcat |(if (every-has? pools $) [$] [])
-          (range 0 (+ 1 (smallest-pool-length pools)))))
+  (let [small-pool (smallest-pool pools)]
+    (mapcat
+     |(let [eid (get-in small-pool [:entities $])]
+        (if (every-has? pools eid) [eid] []))
+     (range 0 (small-pool :n)))))
 
 (defn view-entry [pools eid]
   "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
@@ -191,8 +204,9 @@
   "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
   (let [pools (map |(match $
                       :entity {:get-component (fn [self eid] eid)
-                               :search (fn [self eid] true)
-                               :n (+ 1 MAX_ENTITY_COUNT)}
+                               :search (fn [self eid] 0)
+                               :n (+ 1 MAX_ENTITY_COUNT)
+                               :debug-print (fn [self] (print "entity patch"))}
                       (database $)) query)]
 
     # If any part of the query is not a registered component, view must be empty
