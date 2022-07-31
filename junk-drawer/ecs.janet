@@ -39,17 +39,17 @@
        (when (nil? (get-in ,$wld [:database ,$cmp-name]))
          (put-in ,$wld
                   [:database ,$cmp-name]
-                  (sparse-set/init MAX_ENTITY_COUNT MAX_ENTITY_COUNT)
-
-                  ))
+                  (sparse-set/init MAX_ENTITY_COUNT MAX_ENTITY_COUNT)))
        (:insert (get-in ,$wld [:database ,$cmp-name])
-                ,eid ,component))))
+                ,eid ,component)
+       (:partial-clear (get ,$wld :view-cache) ,$cmp-name))))
 
 (defn remove-component [world ent component-name]
   (let [pool (get-in world [:database component-name])]
     (assert (not (nil? pool)) "component does not exist in world")
     (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
-    (:delete pool ent)))
+    (:delete pool ent)
+    (:partial-clear (get world :view-cache) component-name)))
 
 (defmacro add-entity [world & components]
   "add a new entity with the given components to the world."
@@ -64,7 +64,9 @@
 (defn remove-entity [world ent]
   "remove an entity id from the world."
   (eachp [name pool] (world :database)
-         (:delete pool ent)))
+         (:delete pool ent)
+         (:partial-clear (get world :view-cache) name)
+         ))
 
 (defn register-system [world sys]
   "register a system for the query in the world."

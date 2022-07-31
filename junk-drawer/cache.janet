@@ -6,9 +6,9 @@
   (get self query))
 
 (defn cache-partial-clear [self component]
-  (each query (keys self)
-    (when (not= false (index-of component query false))
-      (put self query nil))))
+  (loop [query :keys self
+         :when (index-of component query false)]
+    (put self query nil)))
 
 (defn init []
   (table/setproto
