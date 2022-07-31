@@ -1,4 +1,5 @@
 (import /junk-drawer/sparse-set :as sparse-set)
+(import /junk-drawer/cache :as cache)
 
 (def MAX_ENTITY_COUNT 1000)
 
@@ -91,25 +92,29 @@
   "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
   (tuple ;(map |(:get-component $ eid) pools)))
 
-(defn view [database query]
+(defn view [database view-cache query]
   "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
-  (let [pools (map |(match $
-                      :entity {:get-component (fn [self eid] eid)
-                               :search (fn [self eid] 0)
-                               :n (+ 1 MAX_ENTITY_COUNT)
-                               :debug-print (fn [self] (print "entity patch"))}
-                      (database $)) query)]
 
-    # If any part of the query is not a registered component, view must be empty
-    (if (empty? (filter nil? pools))
-      (map |(view-entry pools $) (intersection-entities pools))
-      [])))
+  (if-let [cached-view (:get view-cache query)]
+    cached-view
+    (if-let [pools (map |(match $
+                           :entity {:get-component (fn [self eid] eid)
+                                    :search (fn [self eid] 0)
+                                    :n (+ 1 MAX_ENTITY_COUNT)
+                                    :debug-print (fn [self] (print "entity patch"))}
+                           (database $)) query)
+             all-empty? (empty? (filter nil? pools))
+             view-result (map |(view-entry pools $) (intersection-entities pools))]
+      (:insert view-cache query view-result)
+      (:insert view-cache query []))))
 
 (defn- query-result [world query]
   "either return a special query, or the results of the ecs query"
   (match query
     :world world
-    [_] (view (world :database) query)))
+    [_] (view (world :database)
+              (world :view-cache)
+              query)))
 
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
@@ -123,5 +128,6 @@
 (defn create-world []
   @{:id-counter 0
     :database @{}
+    :view-cache (cache/init)
     :systems @[]
     :update update})
