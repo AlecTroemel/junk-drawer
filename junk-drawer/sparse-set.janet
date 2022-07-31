@@ -1,36 +1,32 @@
-# Super minimal sparse set implementation with int values
-#
-# links
-# https://www.geeksforgeeks.org/sparse-set/
-# https://research.swtch.com/
-# https://gist.github.com/dakom/82551fff5d2b843cbe1601bbaff2acbf
-
-
-(defn debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
+(defn- debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
   "pretty Prints contents of set."
+  (print "entities-indices:")
+  (pp entity-indices)
+
   (print "entities:")
   (for i 0 n
     (printf "%q -> %q" (entities i) (components i))))
 
-(defn search [self eid]
+(defn- search [self eid]
   "If element is present, returns index of element in :entities, Else returns -1."
   (cond
     # Searched element must be in range
-    (> eid (self :max-eid)) -1
+    (> eid (self :max-eid))
+    -1
 
-    # The first condition verifies that 'x' is
+    # the first condition verifies that 'x' is
     # within 'n' in this set and the second
     # condition tells us that it is present in
     # the data structure.
-    (and (< (get-in self [:entity-indices eid]) (self :n))
+    (and (<= (get-in self [:entity-indices eid]) (self :n))
          (= (get-in self [:entities (get-in self [:entity-indices eid])]) eid))
     (get-in self [:entity-indices eid])
 
-    # Not found
+    # not found
     -1))
 
-(defn insert [self eid cmp-data]
-  "Inserts a new element into set."
+(defn- insert [self eid cmp-data]
+  "inserts a new element into set."
   (when-let [{:n n
               :max-eid max-eid
               :capacity capacity
@@ -48,8 +44,8 @@
 
     (+= (self :n) 1)))
 
-(defn delete [self eid]
-  "Deletes an element."
+(defn- delete [self eid]
+  "deletes an element."
   (when-let [element-exists? (> (search self eid) 0)
 
              {:n n
@@ -67,29 +63,33 @@
 
     (-= (self :n) 1)))
 
-(defn clear [self]
-  "Removes all elements from set."
+(defn- clear [self]
+  "removes all elements from set."
   (put self :n 0))
+
+(defn- get-component [self eid]
+  ((self :components) (get-in self [:entity-indices eid])))
 
 (defn init [max-eid capacity]
   @{:max-eid max-eid
     :capacity capacity
     :n 0
 
-    # Sparse list, The index (not the value) of this sparse array is itself
+    # sparse list, the index (not the value) of this sparse array is itself
     # the entity id.
     :entity-indices (array/new-filled (+ max-eid 1))
 
-    # Dense list of integers, The index doesn't have inherent meaning, other
+    # dense list of integers, the index doesn't have inherent meaning, other
     # than it must be correct from entity-indices.
     :entities (array/new-filled capacity)
 
-    # Dense list of component type, It is aligned with EntityList such that the
-    # element at EntityList[N] has component data of ComponentList[N]
+    # dense list of component type, it is aligned with entitylist such that the
+    # element at entitylist[n] has component data of componentlist[n]
     :components (array/new-filled capacity)
 
     :search search
     :insert insert
     :delete delete
     :clear clear
-    :debug-print debug-print})
+    :debug-print debug-print
+    :get-component get-component})

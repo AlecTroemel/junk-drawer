@@ -1,4 +1,4 @@
-(use ./ecs)
+(import /junk-drawer/ecs :prefix "")
 
 (def-component message
   :content :any
