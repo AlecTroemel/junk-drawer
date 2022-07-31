@@ -3,14 +3,10 @@
 # Register (global) components, these are shared across worlds.
 # the types given can by any of the ones listed here https://janet-lang.org/api/index.html#type
 # or ":any", for any type!
-#
-# you can define Components by thier top most type
-(def-component lives :count :number)
-
-# Or use this table like syntax
+# components use a table like syntax
 (def-component position :x :number :y :number)
 (def-component velocity :x :number :y :number)
-
+(def-component lives :count :number)
 
 # create a world to hold your entities + systems
 (def world (create-world))
