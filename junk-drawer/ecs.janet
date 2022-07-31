@@ -169,23 +169,7 @@
               $0 $1)
            pools))
 
-# (defn every-has? [pools eid]
-#   "true if every pool has eid"
-#   (each p pools
-#     (printf "\n eid: %q" eid)
-#     (:debug-print p)
-#     (printf "found? %q" (:search p eid))
-#     )
-
-#   (every? (map |(not= (:search $ eid) -1)
-#                pools)))
-
 (defn every-has? [pools eid]
-  # (each pool pools
-  #   (printf "entities %q" (pool :entities))
-  #   (printf "entity at index %q -> %q" i (get-in pool [:entities i]))
-  #   (printf "search for %q -> %q" i ))
-
   (every? (map |(not= -1 (:search $ eid)) pools)))
 
 (defn intersection-entities [pools]
