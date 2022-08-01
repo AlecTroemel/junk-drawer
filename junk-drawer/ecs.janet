@@ -1,5 +1,5 @@
-(import /junk-drawer/sparse-set :as sparse-set)
-(import /junk-drawer/cache :as cache)
+(import /junk-drawer/sparse-set)
+(import /junk-drawer/cache)
 
 (def MAX_ENTITY_COUNT 1000)
 

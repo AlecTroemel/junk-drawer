@@ -1,5 +1,5 @@
 (import /junk-drawer/ecs :prefix "")
-(import /junk-drawer/sparse-set :as sparse-set)
+(import /junk-drawer/sparse-set)
 
 (defn- noop [& args] nil)
 
