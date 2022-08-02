@@ -56,17 +56,19 @@
   (with-syms [$wld $db $eid]
     ~(let [,$wld ,world
            ,$db (get ,$wld :database)
-           ,$eid (get ,$wld :id-counter)]
+           ,$eid (if (empty? (get ,$wld :reusable-ids))
+                   (get ,$wld :id-counter)
+                   (array/pop (,$wld :reusable-ids)))]
        ,;(map |(quasiquote (add-component ,$wld ,$eid ,$)) components)
-          (put ,$wld :id-counter (inc ,$eid))
-          ,$eid)))
+       (put ,$wld :id-counter (inc ,$eid))
+       ,$eid)))
 
 (defn remove-entity [world ent]
   "remove an entity id from the world."
   (eachp [name pool] (world :database)
          (:delete pool ent)
-         (:clear (get world :view-cache) name)
-         ))
+         (:clear (get world :view-cache) name))
+  (array/push (world :reusable-ids) ent))
 
 (defn register-system [world sys]
   "register a system for the query in the world."
@@ -129,6 +131,7 @@
 
 (defn create-world []
   @{:id-counter 0
+    :reusable-ids @[]
     :database @{}
     :view-cache (cache/init)
     :systems @[]
