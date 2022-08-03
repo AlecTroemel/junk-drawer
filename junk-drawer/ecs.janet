@@ -1,7 +1,8 @@
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
-(def MAX_ENTITY_COUNT 1000)
+(def MAX_ENTITY_COUNT 10000)
+(def MAX_ENTITY_ID 10000)
 
 (defmacro def-component [name & fields]
   "define a new component with the specified fields."
@@ -39,7 +40,7 @@
        (when (nil? (get-in ,$wld [:database ,$cmp-name]))
          (put-in ,$wld
                   [:database ,$cmp-name]
-                  ,(sparse-set/init MAX_ENTITY_COUNT MAX_ENTITY_COUNT)))
+                  (,sparse-set/init MAX_ENTITY_ID MAX_ENTITY_COUNT)))
        (:insert (get-in ,$wld [:database ,$cmp-name])
                 ,eid ,component)
        (:clear (get ,$wld :view-cache) ,$cmp-name))))
