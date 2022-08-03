@@ -24,7 +24,7 @@
     :clear |(:goto $ :green)}
    :red
    {:leave (fn [self] (print "leaving red"))
-    :calm |(:goto $ :yellow)}})
+    :calm |(:goto $ :yellow "from calm")}})
 
 
 # Create the actual fsm object with the initial state
