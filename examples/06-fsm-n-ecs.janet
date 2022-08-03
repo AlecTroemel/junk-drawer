@@ -26,9 +26,10 @@
 (add-entity world
             (position :x 3 :y 3)
             (colored-warnings :yellow))
+
 (timers/every world 2
-              (fn [{:database {:colored-warnings cw}} _]
-                (loop [[e c] :pairs cw]
+              (fn [world _]
+                (each [e c] (:view world [:entity :colored-warnings])
                   (when (= (c :current) :yellow)
                     (print "Clearing " e " from timer")
                     (:clear c))))

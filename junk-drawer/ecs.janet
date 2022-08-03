@@ -72,17 +72,17 @@
   "register a system for the query in the world."
   (array/push (get world :systems) sys))
 
-(defn smallest-pool [pools]
+(defn- smallest-pool [pools]
   "returns length (n) of smallest pool"
   (reduce2 |(if (< (get-in $0 [1 :n])
                    (get-in $1 [1 :n]))
               $0 $1)
            pools))
 
-(defn every-has? [pools eid]
+(defn- every-has? [pools eid]
   (every? (map |(not= -1 (:search $ eid)) pools)))
 
-(defn intersection-entities [pools]
+(defn- intersection-entities [pools]
   "return list of entities which all pools contain."
   (let [small-pool (smallest-pool pools)]
     (mapcat
@@ -90,11 +90,11 @@
         (if (every-has? pools eid) [eid] []))
      (range 0 (small-pool :n)))))
 
-(defn view-entry [pools eid]
+(defn- view-entry [pools eid]
   "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
   (tuple ;(map |(:get-component $ eid) pools)))
 
-(defn view [{:database database :view-cache view-cache :capacity capacity} query]
+(defn- view [{:database database :view-cache view-cache :capacity capacity} query]
   "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
 
   (if-let [cached-view (:get view-cache query)]
@@ -133,4 +133,5 @@
     :database @{}
     :view-cache (cache/init)
     :systems @[]
-    :update update})
+    :update update
+    :view view})
