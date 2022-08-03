@@ -9,11 +9,7 @@
 
 (defn- search [self eid]
   "If element is present, returns index of element in :entities, Else returns -1."
-  (cond
-    # Searched element must be in range
-    (> eid (self :max-eid))
-    -1
-
+  (if
     # the first condition verifies that 'x' is
     # within 'n' in this set and the second
     # condition tells us that it is present in
@@ -28,13 +24,10 @@
 (defn- insert [self eid cmp-data]
   "inserts a new element into set."
   (when-let [{:n n
-              :max-eid max-eid
               :capacity capacity
               :entities entities
               :entity-indices entity-indices
               :components components} self
-
-             eid-in-range? (< eid max-eid)
              ents-not-full? (<= n capacity)
              eid-not-present? (= (search self eid) -1)]
 
@@ -70,26 +63,25 @@
 (defn- get-component [self eid]
   ((self :components) (get-in self [:entity-indices eid])))
 
-(defn init [max-eid capacity]
-  @{:max-eid max-eid
-    :capacity capacity
-    :n 0
+(defn init [capacity]
+  (table/setproto
+   @{:capacity capacity
+     :n 0
 
-    # sparse list, the index (not the value) of this sparse array is itself
-    # the entity id.
-    :entity-indices (array/new-filled (+ max-eid 1))
+     # sparse list, the index (not the value) of this sparse array is itself
+     # the entity id.
+     :entity-indices (array)
 
-    # dense list of integers, the index doesn't have inherent meaning, other
-    # than it must be correct from entity-indices.
-    :entities (array/new-filled capacity)
+     # dense list of integers, the index doesn't have inherent meaning, other
+     # than it must be correct from entity-indices.
+     :entities (array/new-filled capacity)
 
-    # dense list of component type, it is aligned with entitylist such that the
-    # element at entitylist[n] has component data of componentlist[n]
-    :components (array/new-filled capacity)
-
-    :search search
-    :insert insert
-    :delete delete
-    :clear clear
-    :debug-print debug-print
-    :get-component get-component})
+     # dense list of component type, it is aligned with entitylist such that
+     # the element at entitylist[n] has component data of componentlist[n]
+     :components (array/new-filled capacity)}
+   @{:search search
+     :insert insert
+     :delete delete
+     :clear clear
+     :debug-print debug-print
+     :get-component get-component}))

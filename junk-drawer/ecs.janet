@@ -1,9 +1,6 @@
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
-(def MAX_ENTITY_COUNT 10000)
-(def MAX_ENTITY_ID 10000)
-
 (defmacro def-component [name & fields]
   "define a new component with the specified fields."
   (let [type-table (table ;fields)
@@ -40,7 +37,7 @@
        (when (nil? (get-in ,$wld [:database ,$cmp-name]))
          (put-in ,$wld
                   [:database ,$cmp-name]
-                  (,sparse-set/init MAX_ENTITY_ID MAX_ENTITY_COUNT)))
+                  (,sparse-set/init (,$wld :capacity))))
        (:insert (get-in ,$wld [:database ,$cmp-name])
                 ,eid ,component)
        (:clear (get ,$wld :view-cache) ,$cmp-name))))
@@ -97,7 +94,7 @@
   "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
   (tuple ;(map |(:get-component $ eid) pools)))
 
-(defn view [database view-cache query]
+(defn view [{:database database :view-cache view-cache :capacity capacity} query]
   "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
 
   (if-let [cached-view (:get view-cache query)]
@@ -105,7 +102,7 @@
     (if-let [pools (map |(match $
                            :entity {:get-component (fn [self eid] eid)
                                     :search (fn [self eid] 0)
-                                    :n (+ 1 MAX_ENTITY_COUNT)
+                                    :n (+ 1 capacity)
                                     :debug-print (fn [self] (print "entity patch"))}
                            (database $)) query)
              all-empty? (empty? (filter nil? pools))
@@ -117,9 +114,7 @@
   "either return a special query, or the results of the ecs query"
   (match query
     :world world
-    [_] (view (world :database)
-              (world :view-cache)
-              query)))
+    [_] (view world query)))
 
 (defn- update [self dt]
   "call all registers systems for entities matching thier queries."
@@ -130,8 +125,10 @@
     (when (some |(not (empty? $)) queries-results)
       (func ;queries-results dt))))
 
-(defn create-world []
-  @{:id-counter 0
+(defn create-world [&named capacity]
+  (default capacity 1000)
+  @{:capacity capacity
+    :id-counter 0
     :reusable-ids @[]
     :database @{}
     :view-cache (cache/init)
