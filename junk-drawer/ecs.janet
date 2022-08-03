@@ -2,7 +2,7 @@
 (import /junk-drawer/cache)
 
 (defmacro def-component [name & fields]
-  "define a new component with the specified fields."
+  "Define a new component with the specified fields."
   (let [type-table (table ;fields)
         def-array (mapcat |[$ (symbol $)] (keys type-table))]
     ~(defn ,name [&keys ,(struct ;def-array)]
@@ -20,17 +20,18 @@
        ,(table ;def-array))))
 
 (defmacro def-tag [name]
-  "define a new tag (component with no data)."
+  "Define a new tag (component with no data)."
   ~(defn ,name [] true))
 
 (defmacro def-system [name queries & body]
-  "define a system to do work on a list of queries."
+  "Define a system to do work on a list of queries."
   ~(def ,name
      (tuple
        ,(values queries)
        (fn [,;(keys queries) dt] ,;body))))
 
 (defmacro add-component [world eid component]
+  "Add a new component to an existing entity."
   (with-syms [$wld $cmp-name]
     ~(let [,$wld ,world
            ,$cmp-name ,(keyword (first component))]
@@ -43,6 +44,7 @@
        (:clear (get ,$wld :view-cache) ,$cmp-name))))
 
 (defn remove-component [world ent component-name]
+  "Remove a component by its name from an entity."
   (let [pool (get-in world [:database component-name])]
     (assert (not (nil? pool)) "component does not exist in world")
     (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
@@ -50,7 +52,7 @@
     (:clear (get world :view-cache) component-name)))
 
 (defmacro add-entity [world & components]
-  "add a new entity with the given components to the world."
+  "Add a new entity with the given components to the world."
   (with-syms [$wld $db $eid]
     ~(let [,$wld ,world
            ,$db (get ,$wld :database)
@@ -62,28 +64,29 @@
        ,$eid)))
 
 (defn remove-entity [world ent]
-  "remove an entity id from the world."
+  "Remove an entity from the world by its ID."
   (eachp [name pool] (world :database)
          (:delete pool ent)
          (:clear (get world :view-cache) name))
   (array/push (world :reusable-ids) ent))
 
 (defn register-system [world sys]
-  "register a system for the query in the world."
+  "Register a system to be run on world update."
   (array/push (get world :systems) sys))
 
 (defn- smallest-pool [pools]
-  "returns length (n) of smallest pool"
+  "Length (n) of smallest pool."
   (reduce2 |(if (< (get-in $0 [1 :n])
                    (get-in $1 [1 :n]))
               $0 $1)
            pools))
 
 (defn- every-has? [pools eid]
+  "True if every pool has the entity id, false otherwise."
   (every? (map |(not= -1 (:search $ eid)) pools)))
 
 (defn- intersection-entities [pools]
-  "return list of entities which all pools contain."
+  "List of entities which all pools contain."
   (let [small-pool (smallest-pool pools)]
     (mapcat
      |(let [eid (get-in small-pool [:entities $])]
@@ -91,12 +94,11 @@
      (range 0 (small-pool :n)))))
 
 (defn- view-entry [pools eid]
-  "return tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)"
+  "Tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)."
   (tuple ;(map |(:get-component $ eid) pools)))
 
 (defn- view [{:database database :view-cache view-cache :capacity capacity} query]
-  "return result of query as list of tuples [(eid cmp-data cmp-data-2 ...)] "
-
+  "Result of query as list of tuples [(eid cmp-data cmp-data-2 ...)]."
   (if-let [cached-view (:get view-cache query)]
     cached-view
     (if-let [pools (map |(match $
@@ -111,13 +113,13 @@
       (:insert view-cache query []))))
 
 (defn- query-result [world query]
-  "either return a special query, or the results of the ecs query"
+  "Either return a special query, or the results of ECS query."
   (match query
     :world world
     [_] (view world query)))
 
 (defn- update [self dt]
-  "call all registers systems for entities matching thier queries."
+  "Call all registers systems for entities matching thier queries."
   (loop [(queries func)
          :in (self :systems)
          :let [queries-results (map |(query-result self $) queries)]]
@@ -126,6 +128,7 @@
       (func ;queries-results dt))))
 
 (defn create-world [&named capacity]
+  "Instantiate new world."
   (default capacity 1000)
   @{:capacity capacity
     :id-counter 0

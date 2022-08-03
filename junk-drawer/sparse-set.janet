@@ -1,5 +1,5 @@
 (defn- debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
-  "pretty Prints contents of set."
+  "Pretty Prints contents of set."
   (print "entities-indices:")
   (pp entity-indices)
 
@@ -22,7 +22,7 @@
     -1))
 
 (defn- insert [self eid cmp-data]
-  "inserts a new element into set."
+  "Inserts a new element into set."
   (when-let [{:n n
               :capacity capacity
               :entities entities
@@ -38,7 +38,7 @@
     (+= (self :n) 1)))
 
 (defn- delete [self eid]
-  "deletes an element."
+  "Deletes an element from set."
   (when-let [element-exists? (> (search self eid) 0)
 
              {:n n
@@ -57,13 +57,15 @@
     (-= (self :n) 1)))
 
 (defn- clear [self]
-  "removes all elements from set."
+  "Removes all elements from set."
   (put self :n 0))
 
 (defn- get-component [self eid]
+  "Get component data for entity id, nil if entity DnE."
   ((self :components) (get-in self [:entity-indices eid])))
 
 (defn init [capacity]
+  "Instantiate new sparse set."
   (table/setproto
    @{:capacity capacity
      :n 0
