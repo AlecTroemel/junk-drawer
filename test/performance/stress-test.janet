@@ -1,5 +1,4 @@
 # run with 'time janet stress-test.janet'
-# NOTE: the macros here and incredibly unhygenic with probably a lot of accidental binding bapture!
 
 (use /junk-drawer)
 
