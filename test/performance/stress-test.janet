@@ -16,29 +16,26 @@
   "Define and register a system with 2 queries, each with 2 alphabet components."
   (array/concat
     # define system
-    (map (fn [i]
-           ['def-system (symbol "sys-" i)
-            ~{first [,(keyword (ALPHABET i)) ,(keyword (ALPHABET (% (+ 1 i) 25)))]
-              second [,(keyword (ALPHABET (% (+ 2 i) 25))) ,(keyword (ALPHABET (% (+ 3 i) 25)))]}
-            nil])
+    (map |['def-system (symbol "sys-" $)
+           ~{first [,(keyword (ALPHABET $)) ,(keyword (ALPHABET (% (+ 1 $) 25)))]
+             second [,(keyword (ALPHABET (% (+ 2 $) 25))) ,(keyword (ALPHABET (% (+ 3 $) 25)))]}
+           nil]
          (range 0 25))
 
     # Register it
-    (map (fn [i] ['register-system 'world (symbol "sys-" i)])
+    (map |['register-system 'world (symbol "sys-" $)]
          (range 0 25))))
 
 (defmacro create-entities-alphabet []
   "Define a entity for every letter and letter+1 components."
-  (map (fn [i]
-         ['add-entity 'world
-          [(symbol (ALPHABET i)) :val i]
-          [(symbol (ALPHABET (% (+ 1 i) 25))) :val i]])
+  (map |['add-entity 'world
+         [(symbol (ALPHABET $)) :val $]
+         [(symbol (ALPHABET (% (inc $) 25))) :val $]]
        (range 0 25)))
 
 (defmacro create-a-lot-of-entites []
   "Create A LOT of entities by calling create-entities-alphabet lots of times"
-  (map (fn [i] ['create-entities-alphabet]) # each one of these creates 26 entities
-       (range 0 100))) # so lets call it 100 times for 2600 entites
+  (array/new-filled 100 ['create-entities-alphabet]))
 
 (print "lets create all the things")
 (def world (create-world))
