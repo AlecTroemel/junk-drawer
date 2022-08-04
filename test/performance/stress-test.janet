@@ -17,7 +17,7 @@
   (array/concat
     # define system
     (map |['def-system (symbol "sys-" $)
-           ~{first [,(keyword (ALPHABET $)) ,(keyword (ALPHABET (% (+ 1 $) 25)))]
+           ~{first [,(keyword (ALPHABET $)) ,(keyword (ALPHABET (% (inc $) 25)))]
              second [,(keyword (ALPHABET (% (+ 2 $) 25))) ,(keyword (ALPHABET (% (+ 3 $) 25)))]}
            nil]
          (range 0 25))
