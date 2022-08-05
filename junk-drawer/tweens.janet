@@ -1,4 +1,4 @@
-(import /junk-drawer/ecs :prefix "")
+(use /junk-drawer/ecs)
 
 (defn- flip [f]
   "flip a tween"
