@@ -1,4 +1,5 @@
 # run with 'time janet stress-test.janet'
+(use profiling/profile)
 
 (use /junk-drawer)
 
@@ -32,39 +33,48 @@
          [(symbol (ALPHABET (% (inc $) 25))) :val $]]
        (range 0 25)))
 
-(defmacro create-a-lot-of-entites []
+(defmacro def-create-entities []
   "Create A LOT of entities by calling create-entities-alphabet lots of times"
-  (array/new-filled 100 ['create-entities-alphabet]))
+  ~(defnp create-entities []
+     ,;(array/new-filled 100 ['create-entities-alphabet])))
 
 (print "lets create all the things")
 (def world (create-world))
 
 (def-component-alphabet)
 (def-systems-alphabet)
-(create-a-lot-of-entites)
+
+(def-create-entities)
+(create-entities)
+
 
 (def rng (math/rng))
 
-(defn remove-random-entity []
+(defnp remove-random-entity []
   (remove-entity world (math/rng-int rng 2559)))
 
-(defn create-random-entity []
+(defnp create-random-entity []
   (add-entity world
               (a :val 1)
               (b :val 1)))
+
+(defnp update-world []
+  (:update world 1))
 
 (print "everything created, lets run update")
 (for i 0 1000
   (when (= 0 (% i 100))
     (printf "i=%q" i))
 
-  (:update world 1)
+  (update-world)
 
-  # TODO Removing and Adding seems to be a bottleneck
   (when (= 0 (% i 10))
     (remove-random-entity))
 
   (when (= 0 (% i 20))
     (create-random-entity)))
 
+
 (print "everything done")
+
+(print-results)
