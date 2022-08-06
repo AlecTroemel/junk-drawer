@@ -1,5 +1,5 @@
 # run with 'time janet stress-test.janet'
-(use profiling/profile)
+(import spork/test)
 
 (use /junk-drawer)
 
@@ -35,45 +35,43 @@
 
 (defmacro def-create-entities []
   "Create A LOT of entities by calling create-entities-alphabet lots of times"
-  ~(defnp create-entities []
+  ~(defn create-entities []
      ,;(array/new-filled 100 ['create-entities-alphabet])))
 
-(print "lets create all the things")
+(print "lets create components and systems")
 (def world (create-world))
 
 (def-component-alphabet)
 (def-systems-alphabet)
 
+(print "\nlets create a ton of entites")
 (def-create-entities)
-(create-entities)
+(test/timeit (create-entities))
 
 
 (def rng (math/rng))
 
-(defnp remove-random-entity []
+(defn remove-random-entity []
   (remove-entity world (math/rng-int rng 2559)))
 
-(defnp create-random-entity []
+(defn create-random-entity []
   (add-entity world
               (a :val 1)
               (b :val 1)))
 
-(defnp update-world []
-  (:update world 1))
+(print "\neverything created, lets run update")
+(test/timeit
+ (for i 0 1000
+   (when (= 0 (% i 100))
+     (printf "i=%q" i))
 
-(print "everything created, lets run update")
-(for i 0 1000
-  (when (= 0 (% i 100))
-    (printf "i=%q" i))
+   (:update world 1)
 
-  (update-world)
+   (when (= 0 (% i 10))
+     (remove-random-entity))
 
-  (when (= 0 (% i 10))
-    (remove-random-entity))
-
-  (when (= 0 (% i 20))
-    (create-random-entity)))
-
+   (when (= 0 (% i 20))
+     (create-random-entity))))
 
 (print "everything done")
 

@@ -1,29 +1,21 @@
-(import testament :prefix "" :exit true)
-
+(import spork/test)
 (import /junk-drawer/cache)
 
-(deftest cache-insert-and-get
-  (let [cache (cache/init)
-        key [:pizza]
-        data {:hotdog "frenchfry"}
-        result (:insert cache key data)]
+(test/start-suite 0)
 
-    (is (assert-deep-equal result data) "Insert returns data just inserted.")
-    (is (assert-deep-equal (:get cache key) data) "Cache contains inserted data.")))
+(let [cache (cache/init)
+      key [:pizza]
+      data {:hotdog "frenchfry"}]
 
-(deftest cache-clear
-  (let [cache (cache/init)]
-    (:insert cache [:keep] {:i-will "stay"})
-    (:insert cache [:remove] {:i-will "go away"})
-    (:insert cache [:keep :remove] {:i-will "go away"})
+  (test/assert (= data (:insert cache key data)) "Insert returns data just inserted.")
+  (test/assert (= data (:get cache key)) "Cache contains inserted data.")
 
-    (:clear cache :remove)
+  (:insert cache [:remove] {:i-will "go away"})
+  (:insert cache [:keep :remove] {:i-will "go away"})
 
-    (is (assert-deep-equal {:i-will "stay"} (:get cache [:keep]))
-        "Keep non matching component query.")
-    (is (= nil (:get cache [:remove]))
-        "Remove matching single component query.")
-    (is (= nil (:get cache [:keep :remove]))
-        "Remove matching multi component query.")))
+  (:clear cache :remove)
+  (test/assert (= data (:get cache key)) "Keep non matching component query.")
+  (test/assert (= nil (:get cache [:remove])) "Remove matching single component query.")
+  (test/assert (= nil (:get cache [:keep :remove])) "Remove matching multi component query."))
 
-(run-tests!)
+(test/end-suite)

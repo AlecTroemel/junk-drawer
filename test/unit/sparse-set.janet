@@ -1,42 +1,27 @@
-(import testament :prefix "" :exit true)
-
+(import spork/test)
 (import /junk-drawer/sparse-set)
 
-(deftest sparse-set-insert
-  (let [ss (sparse-set/init 10)]
-    (:insert ss 0 {:cmp "data"})
-    (is (= 1 (ss :n)) "n is 1 after insert.")))
+(test/start-suite 0)
 
-(deftest sparse-set-search
-  (let [ss (sparse-set/init 10)]
-    (is (= -1 (:search ss 0)) "Does not find EID 0.")
-    (:insert ss 0 {:cmp "data"})
-    (is (= 0 (:search ss 0)) "Finds EID 0.")))
+(let [ss (sparse-set/init 10)
+      data {:cmp "data"}]
+  (test/assert (= -1 (:search ss 0)) "Does not find EID 0, set empty.")
 
-(deftest sparse-set-delete
-  (let [ss (sparse-set/init 10)]
-    (:insert ss 7 {:cmp "data"})
-    (is (= 0 (:search ss 7)) "Finds EID 7.")
+  (:insert ss 0 data)
 
-    (:delete ss 7)
-    (is (= -1 (:search ss 7)) "Does not find deleted EID 7.")))
+  (test/assert (= 1 (ss :n)) "n is 1 after insert.")
+  (test/assert (= 0 (:search ss 0)) "Finds EID 0 after insert.")
 
-(deftest sparse-set-clear
-  (let [ss (sparse-set/init 10)]
-    (:insert ss 4 {:cmp "data 1"})
-    (:insert ss 7 {:cmp "data 2"})
-    (is (= 0 (:search ss 4)) "Finds EID 4.")
-    (is (= 1 (:search ss 7)) "Finds EID 7.")
+  (:delete ss 0)
+  (test/assert (= -1 (:search ss 0)) "Search for 0 returns empty after delete.")
 
-    (:clear ss)
-    (is (= -1 (:search ss 4)) "Search for 0 returns empty.")
-    (is (= -1 (:search ss 7)) "Search returns ID found on empty set.")))
+  (:insert ss 1 data)
+  (:insert ss 2 data)
+  (:clear ss)
+  (test/assert (= -1 (:search ss 1)) "Search for 1 returns empty after clear.")
+  (test/assert (= -1 (:search ss 2)) "Search for 2 returns empty after clear.")
 
-(deftest sparse-set-get-component
-  (let [ss (sparse-set/init 10)
-        data {:cmp "data 1"}]
-    (:insert ss 4 data)
-    (is (assert-deep-equal data (:get-component ss 4))
-        "Gets component data for EID 4")))
+  (:insert ss 3 data)
+  (test/assert (= data (:get-component ss 3)) "Gets component data for EID 3"))
 
-(run-tests!)
+(test/end-suite)
