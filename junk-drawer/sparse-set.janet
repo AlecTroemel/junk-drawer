@@ -39,26 +39,25 @@
 
 (defn- delete [self eid]
   "Deletes an element from set."
-  (when-let [element-exists? (> (search self eid) 0)
+
+  (when-let [element-exists? (>= (search self eid) 0)
 
              {:n n
               :entities entities
               :entity-indices entity-indices
               :components components} self
 
-             temp-ent (entities (- n 1))
-             temp-cmp (components (- n 1))
              dense-i (entity-indices eid)]
 
-    (put entities dense-i temp-ent)
-    (put components dense-i temp-cmp)
-    (put entity-indices temp-ent dense-i)
+    (put entities dense-i nil)
+    (put entity-indices eid nil)
+    (put components dense-i nil)
 
     (-= (self :n) 1)))
 
 (defn- clear [self]
   "Removes all elements from set."
-  (put self :n 0))
+  (array/clear (self :entity-indices)))
 
 (defn- get-component [self eid]
   "Get component data for entity id, nil if entity DnE."

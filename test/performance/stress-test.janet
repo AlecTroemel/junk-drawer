@@ -1,4 +1,5 @@
 # run with 'time janet stress-test.janet'
+(import spork/test)
 
 (use /junk-drawer)
 
@@ -32,16 +33,21 @@
          [(symbol (ALPHABET (% (inc $) 25))) :val $]]
        (range 0 25)))
 
-(defmacro create-a-lot-of-entites []
+(defmacro def-create-entities []
   "Create A LOT of entities by calling create-entities-alphabet lots of times"
-  (array/new-filled 100 ['create-entities-alphabet]))
+  ~(defn create-entities []
+     ,;(array/new-filled 100 ['create-entities-alphabet])))
 
-(print "lets create all the things")
+(print "lets create components and systems")
 (def world (create-world))
 
 (def-component-alphabet)
 (def-systems-alphabet)
-(create-a-lot-of-entites)
+
+(print "\nlets create a ton of entites")
+(def-create-entities)
+(test/timeit (create-entities))
+
 
 (def rng (math/rng))
 
@@ -53,18 +59,20 @@
               (a :val 1)
               (b :val 1)))
 
-(print "everything created, lets run update")
-(for i 0 1000
-  (when (= 0 (% i 100))
-    (printf "i=%q" i))
+(print "\neverything created, lets run update")
+(test/timeit
+ (for i 0 1000
+   (when (= 0 (% i 100))
+     (printf "i=%q" i))
 
-  (:update world 1)
+   (:update world 1)
 
-  # TODO Removing and Adding seems to be a bottleneck
-  (when (= 0 (% i 10))
-    (remove-random-entity))
+   (when (= 0 (% i 10))
+     (remove-random-entity))
 
-  (when (= 0 (% i 20))
-    (create-random-entity)))
+   (when (= 0 (% i 20))
+     (create-random-entity))))
 
 (print "everything done")
+
+(print-results)
