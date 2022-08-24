@@ -3,14 +3,10 @@
 # Register (global) components, these are shared across worlds.
 # the types given can by any of the ones listed here https://janet-lang.org/api/index.html#type
 # or ":any", for any type!
-#
-# you can define Components by thier top most type
-(def-component lives :number)
-
-# Or use this table like syntax
+# components use a table like syntax
 (def-component position :x :number :y :number)
 (def-component velocity :x :number :y :number)
-
+(def-component lives :count :number)
 
 # create a world to hold your entities + systems
 (def world (create-world))
@@ -19,14 +15,14 @@
 (add-entity world
             (position :x 10 :y 10)
             (velocity :x -1 :y -1)
-            (lives 2))
+            (lives :count 2))
 (add-entity world
             (position :x 8 :y 8)
             (velocity :x -2 :y -2)
-            (lives 1))
+            (lives :count 1))
 (add-entity world
             (position :x 3 :y 5)
-            (lives 1))
+            (lives :count 1))
 
 # Systems are a list of queries and a body that does work on them.
 # "dt" (which is passed into a worlds update method) is implicitly available to
@@ -88,17 +84,19 @@
   (each [ent pos] monsters
     (prin "Monster ")
     (pp pos)
-    (if-let [[e]
-             (filter (fn [[e p l]]
-                       (and (not= ent e) (deep= p pos))) entities)]
-      (when-let [[i _ l] e]
-        (printf "monster got %j" e)
-        (remove-entity wld ent)
-        (if (one? (l :count))
-          (do
-            (remove-entity wld e)
+    (when-let [[e] (filter (fn [[e p l]]
+                             (and (not= ent e)
+                                  (deep= p pos)))
+                           entities)
+               [i p life] e]
+
+      (printf "monster got %j" e)
+      (remove-entity wld ent)
+
+      (if (one? (life :count))
+        (do (remove-entity wld e)
             (printf "good bye %i" (e 0)))
-          (update l :count dec))))))
+        (update life :count dec)))))
 
 (register-system world print-monsters)
 
@@ -115,6 +113,7 @@
 (def-system remove-n-add
   {entities [:entity :confused]
    wld :world}
+
   (each [ent cnf] entities
     (printf "%q is confused" ent)
     (printf "%q is being switched from confused to enlightened" ent)
