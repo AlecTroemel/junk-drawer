@@ -5,7 +5,7 @@
   :license "MIT"
   :url "https://github.com/AlecTroemel/junk-drawer"
   :repo "git+https://github.com/AlecTroemel/junk-drawer"
-  :dependencies ["https://github.com/janet-lang/spork"])
+  :dependencies ["spork"])
 
 (declare-source
   :source @["junk-drawer" "junk-drawer.janet"])
