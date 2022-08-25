@@ -1,5 +1,5 @@
 (import spork/test)
-(import /build/cache)
+(import /build/junk-drawer/cache)
 
 (test/start-suite 0)
 
