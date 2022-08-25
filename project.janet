@@ -15,7 +15,7 @@
       (cache/render "cache.c"))
 
 (declare-native
-  :name "cache"
+  :name "junk-drawer/cache"
   :source @["cache.c"])
 
 (declare-source
