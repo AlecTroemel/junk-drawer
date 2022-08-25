@@ -7,5 +7,16 @@
   :repo "git+https://github.com/AlecTroemel/junk-drawer"
   :dependencies ["spork"])
 
+
+(add-loader)
+(import /src/cache)
+
+(task "cache.c" []
+      (cache/render "cache.c"))
+
+(declare-native
+  :name "cache"
+  :source @["cache.c"])
+
 (declare-source
   :source @["junk-drawer" "junk-drawer.janet"])
