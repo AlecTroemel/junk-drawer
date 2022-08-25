@@ -1,12 +1,3 @@
-# a gamestate consists of a table with these (all optional) methods
-#
-# init:   Called once, and only once, before entering the state the first time. See Gamestate.switch().
-# enter:  Called every time when entering the state. See Gamestate.switch().
-# leave:  Called when leaving a state. See Gamestate.switch() and Gamestate.pop().
-# resume: Called when re-entering a state by Gamestate.pop()-ing another state.
-# update: Update the game state. Called every frame.
-# draw:   Draw on the screen. Called every frame.
-
 (defn- exec-if-has [t f & args]
   (default args [])
   (when (get t f) (f t ;args)))
@@ -49,8 +40,34 @@
   "Draw on the screen. Called every frame."
   (exec-if-has (:current self) :draw ;args))
 
-(defn init []
-  "create a new gamestate manager"
+(defn init
+  ```
+  Create a new gamestate manager. Gamestates are switched to using the "switch" method. Gamestates can
+  also be pushed and poped like a stack on the the manager.
+
+  (def *GS* (gamestate/init))
+  (:switch *GS* menu)
+  (:push *GS* settings)
+  (:pop *GS*)
+
+  A gamestate consists of a table with these (all optional) methods:
+    - (init self): Called once, and only once, before entering the state the first time. See Gamestate.switch().
+    - (enter self prev & args): Called every time when entering the state. See Gamestate.switch().
+    - (leave self): Called when leaving a state. See Gamestate.switch() and Gamestate.pop().
+    - (resume self prev & args): Called when re-entering a state by Gamestate.pop()-ing another state.
+    - (update self & args): Update the game state. Called every frame.
+    - (draw self & args): Draw on the screen. Called every frame.
+
+  (def menu
+    {:init (fn [self] (print "menu init"))
+     :enter (fn [self prev & args] (printf "menu enter %q" args))
+     :update (fn [self dt] (print "menu game state dt: " dt))})
+
+  (:update *GS* dt)
+  (:draw *GS*)
+  ```
+  []
+
   {:_stack @[]
    :initialized-states @{}
    :change-state change-state
