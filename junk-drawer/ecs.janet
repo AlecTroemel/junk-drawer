@@ -1,8 +1,21 @@
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
-(defmacro def-component [name & fields]
-  "Define a new component with the specified fields."
+(defmacro def-component
+  ```
+  Define a new component fn of the specified fields, where fields follow the
+  ":name :datatype" pattern. Names must be keywords, and the datatype can be
+  any datatype the (type) fn returns. The component function will then verify
+  that the types of the fields are correct when ran.
+
+  (def-component pizza :hotdog :number :frenchfry :string)
+  (pizza :hotdog 1)        # throws error missing "frenchfry" field
+  (pizza :hotdog "string") # throws error datatype missmatch
+  (pizza :hotdog 1 :frenchfry "milkshake") # evaluates to...
+  {:hotdog 1 :frenchfry "milkshake}
+  ```
+  [name & fields]
+
   (let [type-table (table ;fields)
         def-array (mapcat |[$ (symbol $)] (keys type-table))]
     ~(defn ,name [&keys ,(struct ;def-array)]
@@ -19,19 +32,53 @@
        # return the component
        ,(table ;def-array))))
 
-(defmacro def-tag [name]
-  "Define a new tag (component with no data)."
+(defmacro def-tag
+  ```
+  Define a new tag, a component that holds no data.
+
+  (def-tag monster)
+  (add-entity world (monster))
+  ```
+  [name]
   ~(defn ,name [] true))
 
-(defmacro def-system [name queries & body]
-  "Define a system to do work on a list of queries."
+(defmacro def-system
+  ```
+  Define a system fn that operates over queries. Queries are lists
+  of component names, an are assigned to a variable. Note that "dt"
+  is implicitly available in all systems context.
+
+  (def-system move-sys
+    {moveables [:position :velocity]}
+    (each [pos vel] moveables
+      (put pos :x (+ (pos :x) (* dt (vel :x))))
+      (put pos :y (+ (pos :y) (* dt (vel :y))))))
+
+  Additionaly, if you need the parent world invoking the system, there's
+  a special query for that. This is useful when creating or deleting
+  Entites within a system.
+
+  (def-system give-me-the-world
+    {wld :world}
+    (pp wld))
+  ```
+  [name queries & body]
+
   ~(def ,name
      (tuple
        ,(values queries)
        (fn [,;(keys queries) dt] ,;body))))
 
-(defmacro add-component [world eid component]
-  "Add a new component to an existing entity."
+(defmacro add-component
+  ```
+  Add a new component to an existing entity. Note this has
+  some performance implications, as it will invalidate the
+  query cache for all related systems.
+
+  (add-component ENTITY_ID_HERE (position :x 1 :y 2))
+  ```
+  [world eid component]
+
   (with-syms [$wld $cmp-name]
     ~(let [,$wld ,world
            ,$cmp-name ,(keyword (first component))]
@@ -43,16 +90,38 @@
                 ,eid ,component)
        (:clear (get ,$wld :view-cache) ,$cmp-name))))
 
-(defn remove-component [world ent component-name]
-  "Remove a component by its name from an entity."
+(defn remove-component
+  ```
+  Remove a component by its name from an entity. Note this has
+  some performance implications, as it will invalidate the
+  query cache for all related systems.
+
+  (remove-component ENTITY_ID_HERE :position)
+  ```
+  [world ent component-name]
+
   (let [pool (get-in world [:database component-name])]
     (assert (not (nil? pool)) "component does not exist in world")
     (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
     (:delete pool ent)
     (:clear (get world :view-cache) component-name)))
 
-(defmacro add-entity [world & components]
-  "Add a new entity with the given components to the world."
+(defmacro add-entity
+  ```
+  Add a new entity with the given components to the world. Note that this macro
+  uses the name of the component fn being called as the component ID. So be sure
+  to call it within this macro.
+
+  Note this has some performance implications, as it will invalidate the query cache
+  for all systems using any of the provided components.
+
+  (add-entity world
+            (position :x 0 :y 0)
+            (velocity :x 1 :y 1)
+            (monster))
+  ```
+  [world & components]
+
   (with-syms [$wld $db $eid]
     ~(let [,$wld ,world
            ,$db (get ,$wld :database)
@@ -63,15 +132,29 @@
        (put ,$wld :id-counter (inc ,$eid))
        ,$eid)))
 
-(defn remove-entity [world ent]
-  "Remove an entity from the world by its ID."
+(defn remove-entity
+  ```
+  Remove an entity from the world by its ID.
+
+  Note this has some performance implications, as it will invalidate the query cache
+  for all systems using any of the components on the entity.
+
+  (remove-entity world ENTITY_ID)
+  ```
+  [world ent]
+
   (eachp [name pool] (world :database)
          (:delete pool ent)
          (:clear (get world :view-cache) name))
   (array/push (world :reusable-ids) ent))
 
-(defn register-system [world sys]
-  "Register a system to be run on world update."
+(defn register-system
+  ```
+  Register a system to be run on world update.
+
+  (register-system world move-sys)
+  ```
+  [world sys]
   (array/push (get world :systems) sys))
 
 (defn- smallest-pool [pools]
@@ -127,8 +210,20 @@
     (when (some |(not (empty? $)) queries-results)
       (func ;queries-results dt))))
 
-(defn create-world [&named capacity]
-  "Instantiate new world."
+(defn create-world
+  ```
+  Instantiate a new world. Worlds contain entities and systems that
+  operate on them.
+
+  (var world (create-world))
+
+  Call the :update method on the world and be sure to pass in dt, the time
+  between last call to update
+
+  (:update world dt)
+  ```
+  [&named capacity]
+
   (default capacity 1000)
   @{:capacity capacity
     :id-counter 0
