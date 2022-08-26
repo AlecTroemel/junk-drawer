@@ -3,18 +3,25 @@
 (deft Cache (struct *data JanetTable))
 
 (defn cache_get [(p void*) (key Janet) (*out Janet)] int
-  (def *cache Cache (cast Cache* p))
-  (def *data JanetTable (-> cache data))
+  (def *data JanetTable (-> (cast Cache* p) data))
   (set *out (janet_table_get data key))
   (return 1))
 
 (defn cache_put [(p void*) (key Janet) (value Janet)] void
-  (def *cache Cache (cast Cache* p))
-  (def *data JanetTable (-> cache data))
+  (def *data JanetTable (-> (cast Cache* p) data))
   (janet_table_put data key value))
 
+(defn cache_next [(p void*) (key Janet)] Janet
+  (def data Janet (janet_wrap_table (-> (cast Cache* p) data)))
+  (return (janet_next data key)))
+
 (def cache_type JanetAbstractType
-  (array "cache" NULL NULL cache_get cache_put JANET_ATEND_PUT))
+  (array "cache"
+         NULL NULL
+         cache_get cache_put
+         NULL NULL NULL NULL NULL
+         cache_next
+         JANET_ATEND_NEXT))
 
 (defn [static] cache_init [(argc int) (*argv Janet)] Janet
   (janet_fixarity argc 0)
@@ -25,15 +32,17 @@
 (defn [static] cache_clear [(argc int) (*argv Janet)] Janet
   (janet_fixarity argc 2)
   (def *cache Cache (cast Cache* (janet_getabstract argv 0 &cache_type)))
-  (def data Janet (janet_wrap_table (-> cache data)))
+  (def *data JanetTable (-> cache data))
   (def component Janet (index argv 1))
   (def query Janet (janet_wrap_nil))
-  (while (not (janet_equals (janet_wrap_nil) (set query (janet_next data query))))
+  (while (not (janet_equals (janet_wrap_nil)
+                            (set query (cache_next cache query))))
     (def k Janet (janet_wrap_nil))
-    (while (not (janet_equals (janet_wrap_nil) (set k (janet_next query k))))
+    (while (not (janet_equals (janet_wrap_nil)
+                              (set k (janet_next query k))))
       (def v Janet (janet_in query k))
       (if (janet_equals component v)
-        (cache_put cache query (janet_wrap_nil)))))
+        (janet_table_remove data query))))
   (return (janet_wrap_nil)))
 
 (def (array cache_cfuns) JanetReg
