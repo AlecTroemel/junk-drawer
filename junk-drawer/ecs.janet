@@ -1,5 +1,5 @@
 (import /junk-drawer/sparse-set)
-(import /junk-drawer/cache)
+(import /build/junk-drawer/cache)
 
 (defmacro def-component [name & fields]
   "Define a new component with the specified fields."
@@ -41,7 +41,7 @@
                   (,sparse-set/init (,$wld :capacity))))
        (:insert (get-in ,$wld [:database ,$cmp-name])
                 ,eid ,component)
-       (:clear (get ,$wld :view-cache) ,$cmp-name))))
+       (,cache/clear (get ,$wld :view-cache) ,$cmp-name))))
 
 (defn remove-component [world ent component-name]
   "Remove a component by its name from an entity."
@@ -49,7 +49,7 @@
     (assert (not (nil? pool)) "component does not exist in world")
     (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
     (:delete pool ent)
-    (:clear (get world :view-cache) component-name)))
+    (cache/clear (get world :view-cache) component-name)))
 
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
@@ -67,7 +67,7 @@
   "Remove an entity from the world by its ID."
   (eachp [name pool] (world :database)
          (:delete pool ent)
-         (:clear (get world :view-cache) name))
+         (cache/clear (get world :view-cache) name))
   (array/push (world :reusable-ids) ent))
 
 (defn register-system [world sys]
