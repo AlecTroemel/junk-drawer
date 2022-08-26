@@ -1,6 +1,7 @@
 (use /junk-drawer/ecs)
 
-(setdyn :doc ```Tweens (short for in-betweening) allows you to interpolate values using predefined functions,
+(setdyn :doc ```
+Tweens (short for in-betweening) allows you to interpolate values using predefined functions,
 the applet here https://hump.readthedocs.io/en/latest/timer.html#tweening-methods
 gives a good visualization of what happens.
 

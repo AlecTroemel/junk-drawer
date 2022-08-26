@@ -1,6 +1,18 @@
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
+(setdyn :doc ```
+ECS (short for Entity Component System) is a game dev pattern where you
+
+1. Define components with (def-component) that hold data of a specific aspect.
+2. Define systems with (def-system) which process entities with matching components
+3. Create a world which will hold your entities and have registered systems.
+4. Create entities comprised of many components in your world.
+
+ECS encourage code reuse by breaking down problems into their individual and isolated parts!
+This implimentation uses a (relatively naive) sparse set data structure.
+```)
+
 (defmacro def-component
   ```
   Define a new component fn of the specified fields, where fields follow the
@@ -13,6 +25,8 @@
   (pizza :hotdog "string") # throws error datatype missmatch
   (pizza :hotdog 1 :frenchfry "milkshake") # evaluates to...
   {:hotdog 1 :frenchfry "milkshake}
+
+  dont need anydata? check out (def-tag)
   ```
   [name & fields]
 
