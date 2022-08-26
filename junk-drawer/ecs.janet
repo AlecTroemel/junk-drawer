@@ -1,23 +1,13 @@
+(use spork/schema)
+
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
 (defmacro def-component [name & fields]
   "Define a new component with the specified fields."
-  (let [type-table (table ;fields)
-        def-array (mapcat |[$ (symbol $)] (keys type-table))]
-    ~(defn ,name [&keys ,(struct ;def-array)]
-       # assert types of the component fields
-       ,;(map
-          (fn [[key field-type]]
-            ~(assert
-              (= (type ,(symbol key)) ,field-type)
-              ,(string/format "%q must be of type %q" key field-type)))
-          (filter
-           |(not= (last $) :any)
-           (pairs type-table)))
-
-       # return the component
-       ,(table ;def-array))))
+  ~(defn ,name [&named ,;(map |(symbol $) (keys (table ;fields)))]
+     ((,(make-validator ~(props ,;fields)))
+       ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields)))))))
 
 (defmacro def-tag [name]
   "Define a new tag (component with no data)."
