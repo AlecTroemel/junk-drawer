@@ -1,3 +1,18 @@
+(setdyn :doc ```
+Gamestates encapsulates specific states... of your game! A typical game could
+consist of a menu-state, a level-state and a game-over-state. There is a single
+gamestate manager which you initiate with (def *GS* (gamestates/init)), the switch
+(or push) between states.
+
+A gamestate here is just table with these (all optional) methods:
+    - (init self): Called once, and only once, before entering the state the first time. See Gamestate.switch().
+    - (enter self prev & args): Called every time when entering the state. See Gamestate.switch().
+    - (leave self): Called when leaving a state. See Gamestate.switch() and Gamestate.pop().
+    - (resume self prev & args): Called when re-entering a state by Gamestate.pop()-ing another state.
+    - (update self & args): Update the game state. Called every frame.
+    - (draw self & args): Draw on the screen. Called every frame.
+```)
+
 (defn- exec-if-has [t f & args]
   (default args [])
   (when (get t f) (f t ;args)))
@@ -49,14 +64,6 @@
   (:switch *GS* menu)
   (:push *GS* settings)
   (:pop *GS*)
-
-  A gamestate consists of a table with these (all optional) methods:
-    - (init self): Called once, and only once, before entering the state the first time. See Gamestate.switch().
-    - (enter self prev & args): Called every time when entering the state. See Gamestate.switch().
-    - (leave self): Called when leaving a state. See Gamestate.switch() and Gamestate.pop().
-    - (resume self prev & args): Called when re-entering a state by Gamestate.pop()-ing another state.
-    - (update self & args): Update the game state. Called every frame.
-    - (draw self & args): Draw on the screen. Called every frame.
 
   (def menu
     {:init (fn [self] (print "menu init"))
