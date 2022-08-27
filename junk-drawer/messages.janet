@@ -1,5 +1,16 @@
 (use /junk-drawer/ecs)
 
+(setdyn :doc ```
+It is often useful to pass event messages between systems. This extension
+to the ECS gives a simple way to do that. simply register the update system
+
+(register-system world messages/update-sys)
+
+then send and consume messages.Its very important that you consume every
+message you create at some point, otherwise your message queue will grow
+indefinitly!
+```)
+
 (def-component message
   :content :any
   :consumed :boolean
@@ -12,8 +23,7 @@
 
 (defmacro send
   ```
-  create a message entity with content & the tag components. Requires
-  registering the (register-system world messages/update-sys) system.
+  create a message entity with content & the tag components.
   Message body can be any type, and tags must be tag components
   (see def-tag).
 
