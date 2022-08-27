@@ -13,9 +13,9 @@ sudo jpm install https://github.com/AlecTroemel/junk-drawer
 - `messages`: Communication between systems (requires using ECS)
 - `tweens`: Some common tweening functions and a way to interpolate with them (mostly requires ECS)
 
-Here's an obligitory example that uses most the stuff here. For more detailed examples...look in the `examples/` folder.
+Here's an obligitory example that uses most the stuff here. Each module, and most of the public functions, have detailed doc strings for your reading. If you're lookginf for more complete examples...check out the `examples/` folder!
 
-```clojure
+```janet
 (use junk-drawer)
 
 (fsm/define
