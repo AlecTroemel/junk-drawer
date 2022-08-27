@@ -2,7 +2,7 @@
 
 (setdyn :doc ```
 It is often useful to pass event messages between systems. This extension
-to the ECS gives a simple way to do that. simply register the update system
+to the ECS gives a simple way to do that. Simply register the update system
 
 (register-system world messages/update-sys)
 

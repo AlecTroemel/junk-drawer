@@ -1,5 +1,15 @@
 (use /junk-drawer/ecs)
 
+(setdyn :doc ```
+Its common to want to delay the execution of something an amount of time,
+or to run something at an interval. This module contains building blocks
+for just that! Simply register the update system
+
+(register-system world timers/update-sys)
+
+then create your timers.
+```)
+
 (defn- noop [& args] nil)
 
 (def-component timer
@@ -29,8 +39,6 @@
   has the signature (fn [world dt] nil).
 
   (timers/after world 10 (fn [wld dt] (print "10 ticks have passed")))
-
-  This uses the ECS, and requires registering "timers/update-sys" system
   ```
   [world delay after-fn]
 
@@ -50,8 +58,6 @@
   (timers/during world 5
                (fn [wld dt] (print "0-5 ticks"))
                (fn [wld dt] (print "5 ticks have passed")))
-
-  This uses the ECS, and requires registering "timers/update-sys" system
   ```
   [world delay during-fn &opt after-fn]
 
@@ -71,8 +77,6 @@
   (timers/every world 2
               (fn [wld dt] (print "every 2, but only 3 times"))
               3)
-
-  This uses the ECS, and requires registering "timers/update-sys" system
   ```
   [world delay after-fn &opt count]
 
