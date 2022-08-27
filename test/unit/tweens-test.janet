@@ -3,10 +3,9 @@
 
 (defmacro test-tween [tween-fn expected]
   (map |['test/assert
-         ~(= (,tween-fn ,(/ $ 4)) ,(expected $))
-         (string/format "Expect (%q %q) -> %q" tween-fn (/ $ 4) (expected $))]
-       (range 4)))
-
+         ~(= (,tween-fn ,(/ $ (length expected))) ,(expected $))
+         (string/format "Expect (%q %q) -> %q" tween-fn (/ $ (length expected)) (expected $))]
+       (range (length expected))))
 
 (test/start-suite 0)
 
