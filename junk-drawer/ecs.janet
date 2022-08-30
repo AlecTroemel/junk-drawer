@@ -5,13 +5,18 @@
 
 (defmacro def-component [name & fields]
   "Define a new component with the specified fields."
-  ~(defn ,name [&named ,;(map |(symbol $) (keys (table ;fields)))]
-     ((,(make-validator ~(props ,;fields)))
-       ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields)))))))
+  ~(defn ,name [&named ,;(map symbol (keys (table ;fields)))]
+     (-> (table/setproto ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields))))
+                          @{:__component__ ,(keyword name)
+                            :__validate__ ,((make-validator ~(props ,;fields)))})
+         (:__validate__))))
 
 (defmacro def-tag [name]
   "Define a new tag (component with no data)."
-  ~(defn ,name [] true))
+  ~(defn ,name []
+     (table/setproto @{}
+                     @{:__component__ ,(keyword name)
+                       :__validate__ (fn [& args] false)})))
 
 (defmacro def-system [name queries & body]
   "Define a system to do work on a list of queries."
@@ -33,6 +38,7 @@
                 ,eid ,component)
        (:clear (get ,$wld :view-cache) ,$cmp-name))))
 
+# TODO: may be able to turn this into normal fn
 (defn remove-component [world ent component-name]
   "Remove a component by its name from an entity."
   (let [pool (get-in world [:database component-name])]
@@ -41,6 +47,7 @@
     (:delete pool ent)
     (:clear (get world :view-cache) component-name)))
 
+# TODO: may be able to turn this into normal fn
 (defmacro add-entity [world & components]
   "Add a new entity with the given components to the world."
   (with-syms [$wld $db $eid]
