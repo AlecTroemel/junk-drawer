@@ -12,11 +12,11 @@
 (import /src/cache)
 
 (task "cache.c" []
-      (cache/render "cache.c"))
+      (cache/render "build/cache.c"))
 
 (declare-native
   :name "junk-drawer/cache"
-  :source @["cache.c"])
+  :source @["build/cache.c"])
 
 (declare-source
   :source @["junk-drawer" "junk-drawer.janet"])
