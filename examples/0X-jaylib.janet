@@ -11,7 +11,7 @@
 # Components
 (def-component position :x :number :y :number)
 (def-component velocity :x :number :y :number)
-(def-component circle :radius :number :color :any)
+(def-component circle :radius :number :color (any))
 
 # System Callbacks
 (def-system sys-move
@@ -40,11 +40,12 @@
    :init (fn game-init [self]
            (let [world (get self :world)]
              # Entities
+             (let [pos (position :x 100.0 :y 100.0)
+                   vel (velocity :x 1 :y 2)
+                   circ (circle :radius 40 :color white)]
+               (add-entity world pos vel circ))
+
              (add-entity world
-                         (position :x 100.0 :y 100.0)
-                         (velocity :x 1 :y 2)
-                         (circle :radius 40 :color white))
-             (add-entity (self :world)
                          (position :x 200.0 :y 50.0)
                          (velocity :x (- 2) :y 4)
                          (circle :radius 40 :color white))
