@@ -4,10 +4,10 @@
 (defmacro test-tween [tween-fn expected]
   (map |['test/assert
          ~(= (,tween-fn ,(/ $ (length expected))) ,(expected $))
-         (string/format "Expect (%q %q) -> %q"
-                        tween-fn
-                        (/ $ (length expected))
-                        (expected $))]
+         ~(string/format "Expect %q at %q got %q"
+                         (,tween-fn ,(/ $ (length expected)))
+                        ,(/ $ (length expected))
+                        ,(expected $))]
        (range (length expected))))
 
 (defn tween-results [tween-fn count]
