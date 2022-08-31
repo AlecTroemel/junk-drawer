@@ -76,13 +76,15 @@
 (defn tween [start end func duration]
   (assert (find |(= $ (type start)) [:number :table])
           "currently only supports tweening numbers or tables")
-  @{:start start
-    :current start
-    :end end
-    :func func
-    :duration duration
-    :elapsed-time 0
-    :complete false})
+  (table/setproto @{:start start
+                    :current start
+                    :end end
+                    :func func
+                    :duration duration
+                    :elapsed-time 0
+                    :complete false}
+                  @{:__id__ :tween
+                    :__validate__ (fn [& args] true)}))
 
 (def-system update-sys
   {active-tweens [:entity :tween] wld :world}

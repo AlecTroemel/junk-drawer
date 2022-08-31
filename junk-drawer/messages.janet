@@ -1,7 +1,7 @@
 (use /junk-drawer/ecs)
 
 (def-component message
-  :content :any
+  :content (any)
   :consumed :boolean
   :created :number)
 
