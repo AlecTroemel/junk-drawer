@@ -1,3 +1,4 @@
+
 (import spork/test)
 
 # NOTE Because of a limitation/bug of the messages send macro, we need to "use" these files.
@@ -16,7 +17,6 @@
   (def-system msg-counter
     {wld :world
      msgs [:message :msg-tag]}
-    (pp msgs)
     (each [msg] msgs
         (+= message-process-count 1)
         (consume msg)))
