@@ -7,7 +7,7 @@
   "Define a new component with the specified fields."
   ~(defn ,name [&named ,;(map symbol (keys (table ;fields)))]
      (-> (table/setproto ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields))))
-                          @{:__component__ ,(keyword name)
+                          @{:__id__ ,(keyword name)
                             :__validate__ ,((make-validator ~(props ,;fields)))})
          (:__validate__))))
 
@@ -15,7 +15,7 @@
   "Define a new tag (component with no data)."
   ~(defn ,name []
      (table/setproto @{}
-                     @{:__component__ ,(keyword name)
+                     @{:__id__ ,(keyword name)
                        :__validate__ (fn [& args] false)})))
 
 (defmacro def-system [name queries & body]
@@ -25,20 +25,21 @@
        ,(values queries)
        (fn [,;(keys queries) dt] ,;body))))
 
-(defmacro add-component [world eid component]
-  "Add a new component to an existing entity."
-  (with-syms [$wld $cmp-name]
-    ~(let [,$wld ,world
-           ,$cmp-name ,(keyword (first component))]
-       (when (nil? (get-in ,$wld [:database ,$cmp-name]))
-         (put-in ,$wld
-                  [:database ,$cmp-name]
-                  (,sparse-set/init (,$wld :capacity))))
-       (:insert (get-in ,$wld [:database ,$cmp-name])
-                ,eid ,component)
-       (:clear (get ,$wld :view-cache) ,$cmp-name))))
+(defn- get-or-create-component-set [{:database db :capacity cap} cmp-name]
+  "return the sparse set for the component, creating if it it does not already exist."
+  (match (get db cmp-name)
+    nil (let [new-set (sparse-set/init cap)]
+          (put db cmp-name new-set)
+          new-set)
+    cmp-set cmp-set))
 
-# TODO: may be able to turn this into normal fn
+(defn add-component [world eid component]
+  "Add a new component to an existing entity."
+  (let [cmp-name (component :__id__)
+        cmp-set (get-or-create-component-set world cmp-name)]
+    (:insert cmp-set eid component)
+    (:clear (world :view-cache) cmp-name)))
+
 (defn remove-component [world ent component-name]
   "Remove a component by its name from an entity."
   (let [pool (get-in world [:database component-name])]
@@ -47,18 +48,21 @@
     (:delete pool ent)
     (:clear (get world :view-cache) component-name)))
 
-# TODO: may be able to turn this into normal fn
-(defmacro add-entity [world & components]
+(defn add-entity [world & components]
   "Add a new entity with the given components to the world."
-  (with-syms [$wld $db $eid]
-    ~(let [,$wld ,world
-           ,$db (get ,$wld :database)
-           ,$eid (if (empty? (get ,$wld :reusable-ids))
-                   (get ,$wld :id-counter)
-                   (array/pop (,$wld :reusable-ids)))]
-       ,;(map |(quasiquote (add-component ,$wld ,$eid ,$)) components)
-       (put ,$wld :id-counter (inc ,$eid))
-       ,$eid)))
+
+  # Use a free ID (from deleted entity) if available
+  (let [eid (or (array/pop (world :reusable-ids))
+                (get world :id-counter))]
+
+    # Add individual component data to database
+    (each component components
+      (add-component world eid component))
+
+    # increment the id counter when there are no more
+    # free id's to use
+    (when (empty? (world :reusable-ids))
+      (put world :id-counter (inc (world :id-counter))))))
 
 (defn remove-entity [world ent]
   "Remove an entity from the world by its ID."
