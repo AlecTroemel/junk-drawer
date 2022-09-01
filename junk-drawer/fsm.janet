@@ -1,3 +1,11 @@
+(setdyn :doc ```
+FSM (short for Finite State Machine) is a model where you define states (or nodes)
+and transitions between those states, with a machine only "at" a single state at a time.
+
+The bulk of this module consists of the (fsm/define) function, which is used to create
+a state machine "blueprint" function. Check out the docs of that fn for more!
+```)
+
 (defn- goto [self to & args]
   (assert (self to) (string/format "%q is not a valid state" to))
 
