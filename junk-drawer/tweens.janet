@@ -1,5 +1,37 @@
 (use /junk-drawer/ecs)
 
+(setdyn :doc ```
+Tweens (short for in-betweening) allows you to interpolate values using predefined functions,
+the applet here https://hump.readthedocs.io/en/latest/timer.html#tweening-methods
+gives a good visualization of what happens.
+
+This module defines these tweening functions, each with "in-NAME", "out-NAME", "in-out-NAME", and "out-in-NAME"
+varients.
+
+- linear
+- quad
+- cubic
+- quart
+- quint
+- sine
+- expo
+- circ
+- back
+- bounce
+- elastic
+
+(tween/in-cubic 0.5) # -> 0.125
+
+Additionally, by adding the tween component to an entity, you can tween other components values
+
+(add-component world ent col
+               (color :r 255 :g 0 :b 128)
+               tweens/in-cubic
+               10)
+
+check out examples/07-tweens.janet for something more complete
+```)
+
 (defn- flip [f]
   "flip a tween"
   (fn [s & args]
@@ -13,7 +45,7 @@
          (f1 (* 2 s) ;args)
          (+ 1 (f2 (- (* 2 s) 1) ;args))))))
 
-(defmacro def-tween [name & body]
+(defmacro- def-tween [name & body]
   "define the in, out, in-out, and out-in versions of a tween"
   (with-syms [$in $out $in-out $out-in]
     (let [$in (symbol "in-" name)
