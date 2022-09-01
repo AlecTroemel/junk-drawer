@@ -1,9 +1,9 @@
 (use /junk-drawer)
 
 # Register (global) components, these are shared across worlds.
-# the types given can by any of the ones listed here https://janet-lang.org/api/index.html#type
-# or ":any", for any type!
-# components use a table like syntax
+# Components create tables by listing keyname type-schema.
+# The type-schema given can by any form of the syntax listed in spork/schema
+# https://github.com/janet-lang/spork/blob/master/spork/schema.janet#L17
 (def-component position :x :number :y :number)
 (def-component velocity :x :number :y :number)
 (def-component lives :count :number)

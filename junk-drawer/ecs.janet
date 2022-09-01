@@ -1,12 +1,14 @@
+(use spork/schema)
+
 (import /junk-drawer/sparse-set)
 (import /junk-drawer/cache)
 
 (defmacro def-component
   ```
   Define a new component fn of the specified fields, where fields follow the
-  ":name :datatype" pattern. Names must be keywords, and the datatype can be
-  any datatype the (type) fn returns. The component function will then verify
-  that the types of the fields are correct when ran.
+  ":name spork/schema" pattern. Names must be keywords, and the datatype can be
+  valid spork/schema. The component function will then verify that the types of
+  the fields are correct when ran.
 
   (def-component pizza :hotdog :number :frenchfry :string)
   (pizza :hotdog 1)        # throws error missing "frenchfry" field
@@ -16,21 +18,9 @@
   ```
   [name & fields]
 
-  (let [type-table (table ;fields)
-        def-array (mapcat |[$ (symbol $)] (keys type-table))]
-    ~(defn ,name [&keys ,(struct ;def-array)]
-       # assert types of the component fields
-       ,;(map
-          (fn [[key field-type]]
-            ~(assert
-              (= (type ,(symbol key)) ,field-type)
-              ,(string/format "%q must be of type %q" key field-type)))
-          (filter
-           |(not= (last $) :any)
-           (pairs type-table)))
-
-       # return the component
-       ,(table ;def-array))))
+  ~(defn ,name [&named ,;(map |(symbol $) (keys (table ;fields)))]
+     ((,(make-validator ~(props ,;fields)))
+       ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields)))))))
 
 (defmacro def-tag
   ```
