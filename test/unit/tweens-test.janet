@@ -3,11 +3,15 @@
 
 (defmacro test-tween [tween-fn expected]
   (map |['test/assert
-         ~(= (,tween-fn ,(/ $ (length expected))) ,(expected $))
-         ~(string/format "Expect %q at %q got %q"
+         ~(> 0.00001 (math/abs
+                      (- (,tween-fn ,(/ $ (length expected)))
+                         ,(expected $))))
+         ~(string/format "%q at %n: Expect %.20f, got %.20f"
+                         ,tween-fn
+                         ,(/ $ (length expected))
+                         ,(expected $)
                          (,tween-fn ,(/ $ (length expected)))
-                        ,(/ $ (length expected))
-                        ,(expected $))]
+                         )]
        (range (length expected))))
 
 (defn tween-results [tween-fn count]
@@ -36,21 +40,21 @@
 (test/end-suite)
 
 (test/start-suite 3)
-(test-tween tweens/in-quart [0 0.00390625 0.0625 0.316406])
-(test-tween tweens/out-quart [0 0.683594 0.9375 0.996094])
+(test-tween tweens/in-quart [0 0.00390625 0.0625 0.31640625])
+(test-tween tweens/out-quart [0 0.6835937500 0.9375 0.9960937500])
 (test-tween tweens/in-out-quart [0 0.03125 0.5 0.96875])
 (test-tween tweens/out-in-quart [0 0.46875 0.5 0.53125])
 (test/end-suite)
 
 (test/start-suite 4)
-(test-tween tweens/in-quint [0 0.000976562 0.03125 0.237305])
-(test-tween tweens/out-quint [0 0.762695 0.96875 0.999023])
+(test-tween tweens/in-quint [0 0.0009765625 0.03125 0.2373046875])
+(test-tween tweens/out-quint [0 0.7626953125 0.96875 0.9990234375])
 (test-tween tweens/in-out-quint [0 0.015625 0.5 0.984375])
 (test-tween tweens/out-in-quint [0 0.484375 0.5 0.515625])
 (test/end-suite)
 
 (test/start-suite 5)
-(test-tween tweens/in-sine [0 0.0761205 0.292893 0.617317])
+(test-tween tweens/in-sine [0 0.0761204675 0.2928932188 0.6173165676])
 (test-tween tweens/out-sine [1.11022e-16 0.382683 0.707107 0.92388])
 (test-tween tweens/in-out-sine [0 0.146447 0.5 0.853553])
 (test-tween tweens/out-in-sine [5.55112e-17 0.353553 0.5 0.646447])
