@@ -6,7 +6,8 @@
 (setdyn :doc ```
 ECS (short for Entity Component System) is a game dev pattern where you
 
-1. Define components with (def-component) that hold data of a specific aspect.
+1. Define components with (def-component) that hold data of a specific aspect. Components are
+   just objects that have the :__id__ field on them (which names the component in the world).
 2. Define systems with (def-system) which process entities with matching components
 3. Create a world which will hold your entities and have registered systems.
 4. Create entities comprised of many components in your world.
@@ -15,7 +16,7 @@ ECS encourage code reuse by breaking down problems into their individual and iso
 This implimentation uses a (relatively naive) sparse set data structure.
 ```)
 
-(defmacro def-component
+(defmacro def-component [name & fields]
   ```
   Define a new component fn of the specified fields, where fields follow the
   ":name spork/schema" pattern. Names must be keywords, and the datatype can be
@@ -30,21 +31,23 @@ This implimentation uses a (relatively naive) sparse set data structure.
 
   dont need anydata? check out (def-tag)
   ```
-  [name & fields]
+  ~(defn ,name [&named ,;(map symbol (keys (table ;fields)))]
+     (-> (table/setproto ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields))))
+                          @{:__id__ ,(keyword name)
+                            :__validate__ ,((make-validator ~(props ,;fields)))})
+         (:__validate__))))
 
-  ~(defn ,name [&named ,;(map |(symbol $) (keys (table ;fields)))]
-     ((,(make-validator ~(props ,;fields)))
-       ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields)))))))
-
-(defmacro def-tag
+(defmacro def-tag [name]
   ```
   Define a new tag, a component that holds no data.
 
   (def-tag monster)
   (add-entity world (monster))
   ```
-  [name]
-  ~(defn ,name [] true))
+  ~(defn ,name []
+     (table/setproto @{}
+                     @{:__id__ ,(keyword name)
+                       :__validate__ (fn [& args] false)})))
 
 (defmacro def-system
   ```
@@ -73,7 +76,16 @@ This implimentation uses a (relatively naive) sparse set data structure.
        ,(values queries)
        (fn [,;(keys queries) dt] ,;body))))
 
-(defmacro add-component
+(defn- get-or-create-component-set
+  "return the sparse set for the component, creating if it it does not already exist."
+  [{:database db :capacity cap} cmp-name]
+  (match (get db cmp-name)
+    nil (let [new-set (sparse-set/init cap)]
+          (put db cmp-name new-set)
+          new-set)
+    cmp-set cmp-set))
+
+(defn add-component
   ```
   Add a new component to an existing entity. Note this has
   some performance implications, as it will invalidate the
@@ -82,17 +94,10 @@ This implimentation uses a (relatively naive) sparse set data structure.
   (add-component ENTITY_ID_HERE (position :x 1 :y 2))
   ```
   [world eid component]
-
-  (with-syms [$wld $cmp-name]
-    ~(let [,$wld ,world
-           ,$cmp-name ,(keyword (first component))]
-       (when (nil? (get-in ,$wld [:database ,$cmp-name]))
-         (put-in ,$wld
-                  [:database ,$cmp-name]
-                  (,sparse-set/init (,$wld :capacity))))
-       (:insert (get-in ,$wld [:database ,$cmp-name])
-                ,eid ,component)
-       (:clear (get ,$wld :view-cache) ,$cmp-name))))
+  (let [cmp-name (component :__id__)
+        cmp-set (get-or-create-component-set world cmp-name)]
+    (:insert cmp-set eid component)
+    (:clear (world :view-cache) cmp-name)))
 
 (defn remove-component
   ```
@@ -110,12 +115,9 @@ This implimentation uses a (relatively naive) sparse set data structure.
     (:delete pool ent)
     (:clear (get world :view-cache) component-name)))
 
-(defmacro add-entity
+(defn add-entity
   ```
-  Add a new entity with the given components to the world. Note that this macro
-  uses the name of the component fn being called as the component ID. So be sure
-  to call it within this macro.
-
+  Add a new entity with the given components to the world.
   Note this has some performance implications, as it will invalidate the query cache
   for all systems using any of the provided components.
 
@@ -126,15 +128,18 @@ This implimentation uses a (relatively naive) sparse set data structure.
   ```
   [world & components]
 
-  (with-syms [$wld $db $eid]
-    ~(let [,$wld ,world
-           ,$db (get ,$wld :database)
-           ,$eid (if (empty? (get ,$wld :reusable-ids))
-                   (get ,$wld :id-counter)
-                   (array/pop (,$wld :reusable-ids)))]
-       ,;(map |(quasiquote (add-component ,$wld ,$eid ,$)) components)
-       (put ,$wld :id-counter (inc ,$eid))
-       ,$eid)))
+  # Use a free ID (from deleted entity) if available
+  (let [eid (or (array/pop (world :reusable-ids))
+                (get world :id-counter))]
+
+    # Add individual component data to database
+    (each component components
+      (add-component world eid component))
+
+    # increment the id counter when there are no more
+    # free id's to use
+    (when (empty? (world :reusable-ids))
+      (put world :id-counter (inc (world :id-counter))))))
 
 (defn remove-entity
   ```

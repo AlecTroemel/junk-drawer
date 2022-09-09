@@ -4,6 +4,7 @@
 It is often useful to pass event messages between systems. This extension
 to the ECS gives a simple way to do that. Simply register the update system
 
+YOU MUST REGISTER THIS FUNCTION AFTER ALL SYSTEMS THAT USE MESSAGES
 (register-system world messages/update-sys)
 
 then send and consume messages.Its very important that you consume every
@@ -21,7 +22,7 @@ indefinitly!
   (loop [[ent msg] :in messages :when (msg :consumed)]
     (remove-entity wld ent)))
 
-(defmacro send
+(defn send
   ```
   create a message entity with content & the tag components.
   Message body can be any type, and tags must be tag components
@@ -33,14 +34,12 @@ indefinitly!
   point, otherwise your message queue will grow indefinitly! Consume a
   message with (message/consume msg).
   ```
-  [world content & tags]
-  (with-syms [$wld]
-    ~(let [,$wld ,world]
-       (add-entity ,$wld
-                    (message :content ,content
-                             :consumed false
-                             :created (os/clock))
-                    ,;(map |(tuple $) tags)))))
+  [world content & tag-fns]
+  (add-entity world
+              (message :content content
+                       :consumed false
+                       :created (os/clock))
+              ;(map |($) tag-fns)))
 
 (defn consume
   ```

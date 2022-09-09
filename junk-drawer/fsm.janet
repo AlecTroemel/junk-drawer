@@ -68,9 +68,11 @@ a state machine "blueprint" function. Check out the docs of that fn for more!
        ,(let [$state-names (keys states)]
           ~(assert (find |(= $ initial-state) ,$state-names)
                    (string/format "initial state must be in %q" ,$state-names)))
-       (let [machine (merge
-                       {:current initial-state
-                        :goto ,goto}
-                       ,states)]
+       (let [machine (table/setproto (merge
+                                      @{:current initial-state
+                                        :goto ,goto}
+                                      ,states)
+                                     @{:__id__ ,(keyword name)
+                                       :__validate__ (fn [& args] true)})]
          (:goto machine initial-state)
          machine))))
