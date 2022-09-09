@@ -74,5 +74,3 @@
      (create-random-entity))))
 
 (print "everything done")
-
-(print-results)
