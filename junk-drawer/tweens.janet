@@ -43,7 +43,7 @@ check out examples/07-tweens.janet for something more complete
     (* 0.5
        (if (< s 0.5)
          (f1 (* 2 s) ;args)
-         (f2 (- (* 2 s) 1) ;args)))))
+         (+ 1 (f2 (- (* 2 s) 1) ;args))))))
 
 (defmacro- def-tween [name & body]
   "define the in, out, in-out, and out-in versions of a tween"
