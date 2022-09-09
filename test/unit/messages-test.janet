@@ -5,8 +5,6 @@
 
 (ecs/def-tag msg-tag)
 
-
-
 (test/start-suite 0)
 (let [world (ecs/create-world)]
   (var message-process-count 0)
