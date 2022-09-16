@@ -1,4 +1,4 @@
-(use /junk-drawer/ecs)
+(use ./ecs)
 
 (setdyn :doc ```
 It is often useful to pass event messages between systems. This extension

@@ -1,4 +1,4 @@
-(use /junk-drawer/ecs)
+(use ./ecs)
 
 (setdyn :doc ```
 Its common to want to delay the execution of something an amount of time,

@@ -1,4 +1,4 @@
-(use /junk-drawer/ecs)
+(use ./ecs)
 
 (setdyn :doc ```
 Tweens (short for in-betweening) allows you to interpolate values using predefined functions,
