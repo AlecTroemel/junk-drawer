@@ -110,7 +110,6 @@ This implimentation uses a (relatively naive) sparse set data structure.
   (remove-component ENTITY_ID_HERE :position)
   ```
   [world ent component-name]
-
   (let [pool (get-in world [:database component-name])]
     (assert (not (nil? pool)) "component does not exist in world")
     (assert (not= -1 (:search pool ent)) "entity with component does not exist in world")
@@ -129,7 +128,6 @@ This implimentation uses a (relatively naive) sparse set data structure.
             (monster))
   ```
   [world & components]
-
   # Use a free ID (from deleted entity) if available
   (let [eid (or (array/pop (world :reusable-ids))
                 (get world :id-counter))]
@@ -141,7 +139,10 @@ This implimentation uses a (relatively naive) sparse set data structure.
     # increment the id counter when there are no more
     # free id's to use
     (when (empty? (world :reusable-ids))
-      (put world :id-counter (inc (world :id-counter))))))
+      (put world :id-counter (inc (world :id-counter))))
+
+    # Return the new eid just created
+    eid))
 
 (defn remove-entity
   ```
@@ -155,8 +156,8 @@ This implimentation uses a (relatively naive) sparse set data structure.
   [world ent]
 
   (eachp [name pool] (world :database)
-         (:delete pool ent)
-         (:clear (get world :view-cache) name))
+         (when (:delete pool ent)
+           (:clear (get world :view-cache) name)))
   (array/push (world :reusable-ids) ent))
 
 (defn register-system
@@ -181,11 +182,12 @@ This implimentation uses a (relatively naive) sparse set data structure.
 
 (defn- intersection-entities [pools]
   "List of entities which all pools contain."
+
   (let [small-pool (smallest-pool pools)]
     (mapcat
      |(let [eid (get-in small-pool [:entities $])]
         (if (every-has? pools eid) [eid] []))
-     (range 0 (small-pool :n)))))
+     (range 0 (+ 1 (small-pool :n))))))
 
 (defn- view-entry [pools eid]
   "Tuple of all component data for eid from pools (eid cmp-data cmp-data-2 ...)."
@@ -201,7 +203,7 @@ This implimentation uses a (relatively naive) sparse set data structure.
                                     :n (+ 1 capacity)
                                     :debug-print (fn [self] (print "entity patch"))}
                            (database $)) query)
-             all-empty? (empty? (filter nil? pools))
+             all-not-empty? (empty? (filter nil? pools))
              view-result (map |(view-entry pools $) (intersection-entities pools))]
       (:insert view-cache query view-result)
       (:insert view-cache query []))))
