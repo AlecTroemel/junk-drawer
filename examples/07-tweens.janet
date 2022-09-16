@@ -5,33 +5,25 @@
 # gives a good visualization of what happens.
 #
 # In this example we will tween the components color using in-cubic over 10 ticks.
-
 (def-component color
   :r :number
   :g :number
   :b :number)
 (def-tag tween-it)
 
-# Note that we dont create the entity with the tween,
-# instead we add it in a seperate system. When the
-# tween is completed, the "tween" component will be
-# automatically removed from the entity.
+# Tweens are full fledged entities in the world that will query for then update
+# component values. You can have any number of tween entities operating on an entity.
+# However, be carefull about tweening the same component in multiple different ways at
+# the same time as that could create infinite loops!
 (def-system add-tween
   {colors [:entity :color :tween-it]
    wld :world}
   (each [ent col twn _] colors
     (remove-component wld ent :tween-it)
-    (add-component wld ent (tween col
-                                  (color :r 255 :g 0 :b 128)
-                                  tweens/in-cubic
-                                  10))))
-
-# Then we can update your component with the tweens
-# "current" field.
-(def-system tween-colors
-  {tweening-colors [:color :tween]}
-  (each [col twn] tweening-colors
-    (merge-into col (twn :current))))
+    (tweens/create wld ent :component :color
+       :to (color :r 255 :g 0 :b 128)
+       :with tweens/in-cubic
+       :duration 10)))
 
 (def-system print-colors
   {colors [:color]}
@@ -41,7 +33,6 @@
 
 (register-system world tweens/update-sys)
 (register-system world add-tween)
-(register-system world tween-colors)
 (register-system world print-colors)
 
 (add-entity world

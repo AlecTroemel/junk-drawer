@@ -22,14 +22,9 @@ varients.
 
 (tween/in-cubic 0.5) # -> 0.125
 
-Additionally, by adding the tween component to an entity, you can tween other components values
-
-(add-component world ent col
-               (color :r 255 :g 0 :b 128)
-               tweens/in-cubic
-               10)
-
-check out examples/07-tweens.janet for something more complete
+Additionally, You can tween component values on an entity using the
+(tweens/create) function. Read the docs for that fn, or check out
+examples/07-tweens.janet for more!
 ```)
 
 (defn- flip
@@ -86,50 +81,86 @@ check out examples/07-tweens.janet for something more complete
        (math/sin (- (* 2 (/ math/pi period) (- s 1)) (math/asin (/ 1 amp))))
        (math/exp2 (* 10 (dec s))))))
 
-(defn- interpolate [&keys {:start start
-                           :current current
-                           :end end
-                           :func func
-                           :duration duration
-                           :elapsed-time elapsed-time}]
-  (match (type current)
-    :number
-     (+ current (* (- end current)
-                   (func (/ elapsed-time duration))))
-    :table
-     (table
-      ;(mapcat
-        (fn [[key end-val]]
-          [key (interpolate :start (get start key)
-                            :current (get current key)
-                            :end end-val
-                            :func func
-                            :duration duration
-                            :elapsed-time elapsed-time)])
-        (pairs end)))))
+(def-component tween
+  :entity :number
+  :component :keyword
+  :to :table
+  :with :function
+  :duration :number
+  :elapsed-time :number)
 
-(defn tween [start end func duration]
-  (assert (find |(= $ (type start)) [:number :table])
-          "currently only supports tweening numbers or tables")
-  (table/setproto @{:start start
-                    :current start
-                    :end end
-                    :func func
-                    :duration duration
-                    :elapsed-time 0
-                    :complete false}
-                  @{:__id__ :tween
-                    :__validate__ (fn [& args] true)}))
+(defn create
+  ```
+  Create a tween entity which will tween the provided component
+  on the entity to the "to" value over "duration" with the "with"
+  tweening fn. Requires registering (tweens/update-sys) in your ECS.
+
+  (def-component example
+    :a :number            # can only tween numbers
+    :b (props :c :number) # nested objects of numbers are tweened recursively
+    :d :string)           # anything other then numbers are ignored
+
+  ... later on in a system ...
+
+  (tweens/create wld ent :component :example
+       :to {:a 10 :b {:c 34}} # could also use the component fn, but defining unused string seemed wrong.
+       :with tweens/in-cubic
+       :duration 10)          # take 10 Ticks of the ecs to complete
+  ```
+  [world ent &named component to with duration]
+  (add-entity world (tween :entity ent
+                           :component component
+                           :to to
+                           :with with
+                           :duration duration
+                           :elapsed-time 0)))
+
+(defn- bucket-by-component
+  ```
+  fiber that yields [tween-ent tween-data current to elapsed duration func]
+  for each tween. Does this by:
+  1. bucketting the tweens by component
+  2. querying the ECS for entities with that component
+  3. 'filtering' the query results for the ecs in tweens
+  ```
+  [wld tweens]
+  (fn []
+    (loop [[cmp tweens] :pairs (group-by |(get-in $ [1 :component]) tweens)
+           [tweening-ent current] :in (:view wld [:entity cmp])
+           :let [tween (find |(= (get-in $ [1 :entity]) tweening-ent) tweens)]
+           :when (not (nil? tween))]
+      (yield [(tween 0) (tween 1) current]))))
+
+(defn- interpolate
+  ```
+  Recursively apply tween 'func' to all fields of 'current'.
+  ```
+  [current to elapsed duration func]
+  (match (type current)
+    :number (+ current (* (- to current) (func (/ elapsed duration))))
+    :table (table ;(mapcat |[$ (interpolate (get current $)
+                                            (get to $)
+                                            elapsed
+                                            duration
+                                            func)]
+                           (keys to)))))
 
 (def-system update-sys
-  {active-tweens [:entity :tween] wld :world}
-  (each [ent twn] active-tweens
-    (put twn :elapsed-time (+ (twn :elapsed-time) dt))
-    (put twn :current (interpolate ;(kvs twn)))
+  {tweens [:entity :tween] wld :world}
+  (loop [[tween-ent tween-data current] :in (fiber/new (bucket-by-component wld tweens))
+         :let [{:to to
+                :elapsed-time elapsed
+                :duration duration
+                :with func} tween-data]]
 
-    (cond
-      (get twn :complete)
-      (remove-component wld ent :tween)
+    # current in this context is the actual component on the entity being tweened
+    # So we need to get the new "interpolated value" and apply each key on the
+    # actual component table
+    (each [key val] (pairs (interpolate current to elapsed duration func))
+      (put current key val))
 
-      (>= (twn :elapsed-time) (twn :duration))
-      (put twn :complete true))))
+    # Tick the tweens elapsed time, delete it if we've reached its duration
+    (if-let [new-elapsed (+ elapsed 1)
+             complete? (> new-elapsed duration)]
+      (remove-entity wld tween-ent)
+      (put tween-data :elapsed-time new-elapsed))))
