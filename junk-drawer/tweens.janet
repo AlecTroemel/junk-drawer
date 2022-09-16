@@ -84,7 +84,7 @@ examples/07-tweens.janet for more!
 (def-component tween
   :entity :number
   :component :keyword
-  :to :table
+  :to (or :table :struct)
   :with :function
   :duration :number
   :elapsed-time :number)
@@ -107,7 +107,7 @@ examples/07-tweens.janet for more!
        :with tweens/in-cubic
        :duration 10)          # take 10 Ticks of the ecs to complete
   ```
-  [world ent &named component to with duration]
+  [world ent component &named to with duration]
   (add-entity world (tween :entity ent
                            :component component
                            :to to
@@ -124,6 +124,7 @@ examples/07-tweens.janet for more!
   3. 'filtering' the query results for the ecs in tweens
   ```
   [wld tweens]
+  # (pp tweens)
   (fn []
     (loop [[cmp tweens] :pairs (group-by |(get-in $ [1 :component]) tweens)
            [tweening-ent current] :in (:view wld [:entity cmp])
@@ -137,7 +138,8 @@ examples/07-tweens.janet for more!
   ```
   [current to elapsed duration func]
   (match (type current)
-    :number (+ current (* (- to current) (func (/ elapsed duration))))
+    :number (do # (pp func)
+                (+ current (* (- to current) (func (/ elapsed duration)))))
     :table (table ;(mapcat |[$ (interpolate (get current $)
                                             (get to $)
                                             elapsed
@@ -147,17 +149,25 @@ examples/07-tweens.janet for more!
 
 (def-system update-sys
   {tweens [:entity :tween] wld :world}
+
   (loop [[tween-ent tween-data current] :in (fiber/new (bucket-by-component wld tweens))
          :let [{:to to
                 :elapsed-time elapsed
                 :duration duration
                 :with func} tween-data]]
+    # (pp tween-ent)
+    # (pp tween-data)
+    # (pp current)
+    # (pp "")
 
     # current in this context is the actual component on the entity being tweened
     # So we need to get the new "interpolated value" and apply each key on the
-    # actual component table
+    # actual component table. Also Need to be careful to preserve untweened keys.
     (each [key val] (pairs (interpolate current to elapsed duration func))
-      (put current key val))
+      (put current key
+           (match (type val)
+             :number val
+             :table (merge (current key) val))))
 
     # Tick the tweens elapsed time, delete it if we've reached its duration
     (if-let [new-elapsed (+ elapsed 1)
