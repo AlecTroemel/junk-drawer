@@ -1,0 +1,22 @@
+name: Test
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install backing for building janet
+      run: sudo apt install build-essential
+    - name: build janet, install junk-drawer
+      run: |
+        git clone --depth 1 --branch v1.12.1 https://github.com/janet-lang/janet.git /tmp/janet
+        cd /tmp/janet
+        sudo make all test install
+    - name: install junk-drawer
+      run: sudo jpm install junk-drawer
+    - name: run tests
+      run: sudo jpm test
