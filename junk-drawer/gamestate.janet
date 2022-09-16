@@ -25,34 +25,46 @@ A gamestate here is just table with these (all optional) methods:
     (array/push (self :_stack) to)
     (exec-if-has to :enter to pre ;args)))
 
-(defn- switch [self to & args]
+(defn- switch
   "Switch to a gamestate, with any additional arguments passed to the new state."
+  [self to & args]
   (exec-if-has (:current self) :leave to)
   (array/pop (self :_stack))
   (:change-state self to ;args))
 
-(defn- push [self to & args]
-  "Pushes the to on top of the state stack, i.e. makes it the active state. Semantics are the same as switch, except that the leave callback is not called on the previously active state."
+(defn- push
+  ```
+  Pushes the to on top of the state stack, i.e. makes it the active state. Semantics are the same as
+  switch, except that the leave callback is not called on the previously active state.
+  ```
+  [self to & args]
   (:change-state self to args))
 
-(defn- pop [self & args]
-  "Calls 'leave' on the current state and then removes it from the stack, making the state below the current state and calls 'resume' on the activated state. Does not call 'enter' on the activated state."
+(defn- pop
+  ```
+  Calls 'leave' on the current state and then removes it from the stack, making the state below the
+  current state and calls 'resume' on the activated state. Does not call 'enter' on the activated state.
+  ```
+  [self & args]
   (assert (> (length (self :_stack)) 1) "No more states to pop!")
   (let [pre (array/pop (self :_stack))
         to (array/peek (self :_stack))]
     (exec-if-has pre :leave pre)
     (exec-if-has to :resume pre ;args)))
 
-(defn- current [self]
+(defn- current
   "Returns the currently activated gamestate."
+  [self]
   (array/peek (self :_stack)))
 
-(defn- update [self & args]
+(defn- update
   "Update the game state. Called every frame."
+  [self & args]
   (exec-if-has (:current self) :update ;args))
 
-(defn- draw [self & args]
+(defn- draw
   "Draw on the screen. Called every frame."
+  [self & args]
   (exec-if-has (:current self) :draw ;args))
 
 (defn init

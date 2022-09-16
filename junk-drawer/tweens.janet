@@ -32,21 +32,24 @@ Additionally, by adding the tween component to an entity, you can tween other co
 check out examples/07-tweens.janet for something more complete
 ```)
 
-(defn- flip [f]
+(defn- flip
   "flip a tween"
+  [f]
   (fn [s & args]
     (- 1 (f (- 1 s) ;args))))
 
-(defn- chain [f1 f2]
+(defn- chain
   "chain 2 tweens together"
+  [f1 f2]
   (fn [s & args]
     (* 0.5
        (if (< s 0.5)
          (f1 (* 2 s) ;args)
          (+ 1 (f2 (- (* 2 s) 1) ;args))))))
 
-(defmacro- def-tween [name & body]
+(defmacro- def-tween
   "define the in, out, in-out, and out-in versions of a tween"
+  [name & body]
   (with-syms [$in $out $in-out $out-in]
     (let [$in (symbol "in-" name)
           $out (symbol "out-" name)
