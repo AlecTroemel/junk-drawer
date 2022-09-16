@@ -1,5 +1,6 @@
-(defn- debug-print [{:entity-indices entity-indices :entities entities :components components :n n}]
+(defn- debug-print
   "Pretty Prints contents of set."
+  [{:entity-indices entity-indices :entities entities :components components :n n}]
   (print "entities-indices:")
   (pp entity-indices)
 
@@ -7,8 +8,9 @@
   (for i 0 n
     (printf "%q -> %q" (entities i) (components i))))
 
-(defn- search [self eid]
+(defn- search
   "If element is present, returns index of element in :entities, Else returns -1."
+  [self eid]
   (if
     # the first condition verifies that 'x' is
     # within 'n' in this set and the second
@@ -21,8 +23,9 @@
     # not found
     -1))
 
-(defn- insert [self eid cmp-data]
+(defn- insert
   "Inserts a new element into set."
+  [self eid cmp-data]
   (when-let [{:n n
               :capacity capacity
               :entities entities
@@ -37,9 +40,9 @@
 
     (+= (self :n) 1)))
 
-(defn- delete [self eid]
+(defn- delete
   "Deletes an element from set."
-
+  [self eid]
   (when-let [element-exists? (>= (search self eid) 0)
 
              {:n n
@@ -55,16 +58,19 @@
 
     (-= (self :n) 1)))
 
-(defn- clear [self]
+(defn- clear
   "Removes all elements from set."
+  [self]
   (array/clear (self :entity-indices)))
 
-(defn- get-component [self eid]
+(defn- get-component
   "Get component data for entity id, nil if entity DnE."
+  [self eid]
   ((self :components) (get-in self [:entity-indices eid])))
 
-(defn init [capacity]
+(defn init
   "Instantiate new sparse set."
+  [capacity]
   (table/setproto
    @{:capacity capacity
      :n 0

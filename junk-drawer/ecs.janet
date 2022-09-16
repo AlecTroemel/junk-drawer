@@ -16,7 +16,7 @@ ECS encourage code reuse by breaking down problems into their individual and iso
 This implimentation uses a (relatively naive) sparse set data structure.
 ```)
 
-(defmacro def-component [name & fields]
+(defmacro def-component
   ```
   Define a new component fn of the specified fields, where fields follow the
   ":name spork/schema" pattern. Names must be keywords, and the datatype can be
@@ -31,19 +31,21 @@ This implimentation uses a (relatively naive) sparse set data structure.
 
   dont need anydata? check out (def-tag)
   ```
+  [name & fields]
   ~(defn ,name [&named ,;(map symbol (keys (table ;fields)))]
      (-> (table/setproto ,(table ;(mapcat |[$ (symbol $)] (keys (table ;fields))))
                           @{:__id__ ,(keyword name)
                             :__validate__ ,((make-validator ~(props ,;fields)))})
          (:__validate__))))
 
-(defmacro def-tag [name]
+(defmacro def-tag
   ```
   Define a new tag, a component that holds no data.
 
   (def-tag monster)
   (add-entity world (monster))
   ```
+  [name]
   ~(defn ,name []
      (table/setproto @{}
                      @{:__id__ ,(keyword name)
