@@ -41,9 +41,9 @@
     (+= (self :n) 1)))
 
 (defn- delete
-  "Deletes an element from set."
+  "Deletes an element from set. Returns bool on whether anything was deleted."
   [self eid]
-  (when-let [element-exists? (>= (search self eid) 0)
+  (if-let [element-exists? (>= (search self eid) 0)
 
              {:n n
               :entities entities
@@ -51,12 +51,12 @@
               :components components} self
 
              dense-i (entity-indices eid)]
-
-    (put entities dense-i nil)
-    (put entity-indices eid nil)
-    (put components dense-i nil)
-
-    (-= (self :n) 1)))
+    (do (put entities dense-i nil)
+        (put entity-indices eid nil)
+        (put components dense-i nil)
+        (-= (self :n) 1)
+        true)
+    false))
 
 (defn- clear
   "Removes all elements from set."

@@ -94,3 +94,27 @@
 (test-tween tweens/in-out-elastic [-0.000244141 -0.0078125 0.5 1.00781])
 (test-tween tweens/out-in-elastic [0 0.507812 0.499756 0.492188])
 (test/end-suite)
+
+(test/start-suite 11)
+(import /junk-drawer/ecs)
+
+(ecs/def-component tester
+  :a :number
+  :b (props :c :number))
+
+(let [world (ecs/create-world)]
+  (ecs/register-system world tweens/update-sys)
+  (var ent (ecs/add-entity world (tester :a 0 :b @{:c 0})))
+
+  (tweens/create world ent :tester
+     :to {:b {:c 10}}
+     :with tweens/in-linear
+     :duration 10)
+
+  (for i 0 20 (:update world 1))
+
+  (var cmp (first (first (:view world [:tester]))))
+  (test/assert (= (cmp :a) 0))
+  (test/assert (= (get-in cmp [:b :c]) 10)))
+
+(test/end-suite)
