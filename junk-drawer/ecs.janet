@@ -1,7 +1,7 @@
 (use spork/schema)
 
-(import /junk-drawer/sparse-set)
-(import /junk-drawer/cache)
+(import ./sparse-set)
+(import ./cache)
 
 (setdyn :doc ```
 ECS (short for Entity Component System) is a game dev pattern where you
