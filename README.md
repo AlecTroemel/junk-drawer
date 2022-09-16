@@ -1,4 +1,6 @@
-<img src="/junk-drawer-logo.png" width="100%" style="max-width: 100%; image-rendering: crisp-edges;" alt="Junk Drawer hand drawn logo"/>
+<p align="center" style="image-rendering: crisp-edges;">
+  <img src="/junk-drawer-logo.png" width="100%" alt="Junk Drawer hand drawn logo"/>
+</p>
 
 Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small collection of tools & utils for developing games in the wonderful [Janet Lang](https://janet-lang.org).
 
