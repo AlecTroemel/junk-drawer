@@ -74,4 +74,4 @@ Here's an obligitory example that uses most the stuff here.
   (:update GS 1))
 ```
 
-Each module, and most of the public functions, have detailed doc strings for your reading.  If you're lookginf for more complete examples...check out the `examples/` folder!
+Each module, and most of the public functions, have detailed doc strings for your reading.  If you're looking for more complete examples...check out the `examples/` folder!
