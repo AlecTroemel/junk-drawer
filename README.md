@@ -8,12 +8,12 @@ sudo jpm install https://github.com/AlecTroemel/junk-drawer
 
 ### Contents:
 
-- `ecs`: A simple Entity Component System
+- `ecs`: A sparse set based Entity Component System
 - `fsm`: Finite(ish) State Machine
 - `gamestate`: Easy gamestate management.
-- `timers`: Delayed & Schedule functions (requires using ECS)
+- `timers`: Delayed & Scheduled functions (requires using ECS)
 - `messages`: Communication between systems (requires using ECS)
-- `tweens`: Some common tweening functions and a way to interpolate with them (mostly requires ECS)
+- `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS)
 
 Here's an obligitory example that uses most the stuff here.
 
