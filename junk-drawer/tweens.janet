@@ -137,9 +137,9 @@ examples/07-tweens.janet for more!
   Recursively apply tween 'func' to all fields of 'current'.
   ```
   [current to elapsed duration func]
+
   (match (type current)
-    :number (do # (pp func)
-                (+ current (* (- to current) (func (/ elapsed duration)))))
+    :number (+ current (* (- to current) (func (/ elapsed duration))))
     :table (table ;(mapcat |[$ (interpolate (get current $)
                                             (get to $)
                                             elapsed
@@ -155,10 +155,6 @@ examples/07-tweens.janet for more!
                 :elapsed-time elapsed
                 :duration duration
                 :with func} tween-data]]
-    # (pp tween-ent)
-    # (pp tween-data)
-    # (pp current)
-    # (pp "")
 
     # current in this context is the actual component on the entity being tweened
     # So we need to get the new "interpolated value" and apply each key on the
