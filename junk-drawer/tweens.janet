@@ -95,14 +95,14 @@ examples/07-tweens.janet for more!
   on the entity to the "to" value over "duration" with the "with"
   tweening fn. Requires registering (tweens/update-sys) in your ECS.
 
-  (def-component example
+  (def-component example-cmp
     :a :number            # can only tween numbers
     :b (props :c :number) # nested objects of numbers are tweened recursively
     :d :string)           # anything other then numbers are ignored
 
   ... later on in a system ...
 
-  (tweens/create wld ent :component :example
+  (tweens/create wld ent :example-cmp
        :to {:a 10 :b {:c 34}} # could also use the component fn, but defining unused string seemed wrong.
        :with tweens/in-cubic
        :duration 10)          # take 10 Ticks of the ecs to complete
