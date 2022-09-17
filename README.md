@@ -1,5 +1,7 @@
 <img src="/junk-drawer-logo.png" width="100%" alt="Junk Drawer hand drawn logo"/>
 
+[![Test](https://github.com/AlecTroemel/junk-drawer/actions/workflows/main.yml/badge.svg)](https://github.com/AlecTroemel/junk-drawer/actions/workflows/main.yml)
+
 Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small collection of tools & utils for developing games in the wonderful [Janet Lang](https://janet-lang.org).
 
 ```bash
