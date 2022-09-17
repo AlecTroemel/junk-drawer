@@ -17,6 +17,6 @@ jobs:
         cd /tmp/janet
         sudo make all test install
     - name: install junk-drawer
-      run: sudo jpm install junk-drawer
+      run: sudo jpm install https://github.com/AlecTroemel/junk-drawer.git
     - name: run tests
       run: sudo jpm test
