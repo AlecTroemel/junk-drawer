@@ -16,6 +16,7 @@ jobs:
         git clone --depth 1 --branch master https://github.com/janet-lang/janet.git /tmp/janet
         cd /tmp/janet
         sudo make all test install
+        sudo make install-jpm-git
     - name: install junk-drawer
       run: sudo jpm install https://github.com/AlecTroemel/junk-drawer.git
     - name: run tests
