@@ -69,11 +69,47 @@
     :contains contains
     :get-node get-node
     :nodes nodes
-    :edges edges})
+    :edges edges
+    :adjacency-table @{}})
 
-(defn init
+(defmacro edge [to &opt weight]
+  (default weight 1)
+  ~[,(keyword to) {:to ,(keyword to) :weight ,weight}])
+
+(defmacro named-edge [name to &opt weight]
+  (default weight 1)
+  ~[,(keyword name) {:to ,(keyword to) :weight ,weight}])
+
+(defmacro node [name data & edges]
+  ~[,(keyword name) {:data ,data
+                     :edges ,(from-pairs (map eval edges))}])
+
+(defn init [& nodes]
   """
-  Instantiate a new directed graph
+  Instantiate a new directed graph. Optionally provide starting nodes.
+
+  (create
+   (node green
+         (edge yellow 1))
+   (node yellow
+         (edge green 2)
+         (edge red 3))
+   (node red
+         (edge yellow 4)))
   """
-  []
-  (table/setproto @{:adjacency-table @{}} Graph))
+  (table/setproto
+   @{:adjacency-table (from-pairs nodes)}
+   Graph))
+
+(create
+ (node green
+       {:enter (fn [self] (print "entering green"))
+        :leave (fn [self] (print "leaving green"))}
+       (named-edge :warn yellow 1))
+ (node yellow
+       {:enter (fn [self] (print "entering yellow"))}
+       (named-edge :calm green 1)
+       (named-edge :panic red 1))
+ (node red
+       {:leave (fn [self] (print "leaving red"))}
+       (edge yellow 1)))
