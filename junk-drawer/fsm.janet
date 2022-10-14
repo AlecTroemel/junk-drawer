@@ -38,9 +38,10 @@ a state machine "blueprint" function. Check out the docs of that fn for more!
     (when (not (nil? enter-fn))
       (enter-fn self ;args))))
 
-(def FSM (merge directed-graph/Graph
-                @{:apply-edges-functions apply-edges-functions
-                  :goto goto}))
+(def FSM
+  (merge directed-graph/Graph
+         @{:apply-edges-functions apply-edges-functions
+           :goto goto}))
 
 (defmacro define
   ```
