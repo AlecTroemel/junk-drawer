@@ -72,44 +72,58 @@
     :edges edges
     :adjacency-table @{}})
 
-(defmacro edge [to &opt weight]
-  (default weight 1)
-  ~[,(keyword to) {:to ,(keyword to) :weight ,weight}])
 
-(defmacro named-edge [name to &opt weight]
-  (default weight 1)
-  ~[,(keyword name) {:to ,(keyword to) :weight ,weight}])
+(defmacro init [& nodes]
+  ```
+  Instantiate a new directed graph. Can provide starting nodes in convenient syntax.
 
-(defmacro node [name data & edges]
-  ~[,(keyword name) {:data ,data
-                     :edges ,(from-pairs (map eval edges))}])
+  (node NAME & patterns)
 
-(defn init [& nodes]
-  """
-  Instantiate a new directed graph. Optionally provide starting nodes.
+  Patterns can be
+  - (data :key "value")
+  - (fn name [args] & body)
+  - (edge to-node)
+  - (edge to-node weight)
+  - (edge edge-name to-node)
+  - (edge edge-name to-node weight)
 
-  (create
+  Heres a complete example
+
+  (init
    (node green
-         (edge yellow 1))
+         (data :key "val")
+         (edge yellow)) # default weight 1
    (node yellow
-         (edge green 2)
-         (edge red 3))
+         (edge green 3) # override weight
+         (edge panic red)) # override name
    (node red
-         (edge yellow 4)))
-  """
+         (edge calm yellow 2))) # override name and weight
+  ```
   (table/setproto
-   @{:adjacency-table (from-pairs nodes)}
-   Graph))
+   @{:adjacency-table
+       (table
+        ;(mapcat (fn [[_ name & patterns]]
+                   (let [name (keyword name)
+                         data @{} edges @{}]
+                     (each pattern patterns
+                       (match pattern
+                         ['data key val]
+                         (put data key val)
 
-(create
- (node green
-       {:enter (fn [self] (print "entering green"))
-        :leave (fn [self] (print "leaving green"))}
-       (named-edge :warn yellow 1))
- (node yellow
-       {:enter (fn [self] (print "entering yellow"))}
-       (named-edge :calm green 1)
-       (named-edge :panic red 1))
- (node red
-       {:leave (fn [self] (print "leaving red"))}
-       (edge yellow 1)))
+                         ['fn fname args & body]
+                         (put data (keyword fname) ~(fn ,fname ,args ,;body))
+
+                         ['edge name to weight]
+                         (put edges (keyword name) {:to (keyword to) :weight weight})
+
+                         ['edge to (weight (number? weight))]
+                         (put edges (keyword to) {:to (keyword to) :weight weight})
+
+                         ['edge name (to (symbol? to))]
+                         (put edges (keyword name) {:to (keyword to) :weight 1})
+
+                         ['edge to]
+                         (put edges (keyword to) {:to (keyword to) :weight 1})))
+                     [name {:data data :edges edges}]))
+                 nodes))}
+   Graph))
