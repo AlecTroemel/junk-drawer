@@ -1,91 +1,96 @@
 # https://medium.com/tebs-lab/implementations-of-graphs-92eb7f121793
 
-(defn- add-node
-  """
-  Create a new node and add it to the graph. Name must be a hashable type.
-  """
-  [self name &opt data]
-  (default data {})
-  (if (:contains self name)
-    false
-    (do (put-in self [:adjacency-table name] (merge data {:edges @{}}))
-        true)))
+(defmacro node [name & properties]
+  ~[:node ,(keyword name) ,{:edges @{} :data (table ;properties)}])
 
-(defn- add-edge
-  """
-  Create an edge between a and b with an optional weight and edge name.
+(defmacro edge
+  ```
+  - (edge edge-name from-node to-node weight)
+  - (edge edge-name from-node to-node)
+  - (edge from-node to-node weight)
+  - (edge from-node to-node)
+  ```
+  [& pattern]
 
-  If either of the node-names is not already a member of the graph, throw error.
+  (match pattern
+    [(name (symbol? name)) (from (symbol? from)) (to (symbol? to)) (weight (number? weight))]
+    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword name) :weight ,weight}]
 
-  if edge already exists, do not overwrite it and throw error
-  """
-  [self node-a node-b &opt weight edge-name]
-  (default weight 1)
-  (default edge-name (string/format "%s->%s" node-a node-b))
-  (cond (not (:contains self node-a))
-        (errorf "node %s does not exist" node-a)
+    [(name (symbol? name)) (from (symbol? from)) (to (symbol? to))]
+    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword name) :weight 1}]
 
-        (not (:contains self node-b))
-        (errorf "node %s does not exist" node-b)
+    [(from (symbol? from)) (to (symbol? to)) (weight (number? weight))]
+    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword to) :weight ,weight}]
 
-        (not (nil? (get-in self [:adjacency-table node-a :edges node-b])))
-        (errorf "edge between %s->%s already exists" node-a node-b)
-
-        (put-in self [:adjacency-table node-a :edges node-b]
-                {:weight weight :name edge-name})))
-
-(defn- neighbors
-  """
-  Return an list of (node-name, {:weight :name}) of all the neighboring nodes.
-  """
-  [self from-name]
-  (pairs (get-in self [:adjacency-table from-name :edges])))
+    [(from (symbol? from)) (to (symbol? to))]
+    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword to) :weight 1}]))
 
 (defn- contains [self name]
-  """
+  ```
   Return true if the name already maps to a node, false otherwise
-  """
+  ```
   (not (nil? (get-in self [:adjacency-table name]))))
+
+(defn add-node
+  ```
+  Add a node to the graph. Throws error if node already exists in the graph.
+  ```
+  [self [NODE name content]]
+
+  (if (:contains self name)
+    (errorf "graph already contains node %s" name)
+    (put-in self [:adjacency-table name] content)))
+
+(defn- add-edge
+  ```
+  Add a new edge to the graph. You should use the "edge macro to create the new edge.
+  Both from and to nodes must exist.
+  ```
+  [self [EDGE from {:to to :name name :weight weight}]]
+  (cond (not (:contains self from))
+        (errorf "graph does not contain from node %s" from)
+
+        (not (:contains self to))
+        (errorf "graph does not contain to node %s" to)
+
+        (put-in self [:adjacency-table from :edges name]
+                {:to to :weight weight})))
+
+(defn- neighbors
+  ```
+  Return an list of (node-name, {:weight :name}) of all the neighboring nodes.
+  ```
+  [self from-name]
+  (pairs (get-in self [:adjacency-table from-name :edges])))
 
 (defn- get-node [self name]
   (get-in self [:adjacency-table name]))
 
-(defn- nodes [self]
+(defn- list-nodes [self]
   (keys (self :adjacency-table)))
 
-(defn- edges [self]
-  (mapcat (fn [(from-node-name node)]
-            (map (fn [(to-node-name edge)]
+(defn- list-edges [self]
+  [;(mapcat (fn [(from-node-name node)]
+            (map (fn [(edge-name edge)]
                    (table/to-struct
-                    (merge {:from from-node-name :to to-node-name}
+                    (merge {:from from-node-name :name edge-name}
                            edge)))
-                 (pairs (node :edges))))
-          (pairs (self :adjacency-table))))
+                 (pairs (get node :edges))))
+          (pairs (self :adjacency-table)))])
 
 (def Graph
-  @{:add-node add-node
+  @{:contains contains
+    :add-node add-node
     :add-edge add-edge
-    :neighbors neighbors
-    :contains contains
     :get-node get-node
-    :nodes nodes
-    :edges edges
+    :neighbors neighbors
+    :list-nodes list-nodes
+    :list-edges list-edges
     :adjacency-table @{}})
 
-
-(defmacro init [& nodes]
+(defn create [& patterns]
   ```
   Instantiate a new directed graph. Can provide starting nodes in convenient syntax.
-
-  (node NAME & patterns)
-
-  Patterns can be
-  - (data :key "value")
-  - (fn name [args] & body)
-  - (edge to-node)
-  - (edge to-node weight)
-  - (edge edge-name to-node)
-  - (edge edge-name to-node weight)
 
   Heres a complete example
 
@@ -99,31 +104,11 @@
    (node red
          (edge calm yellow 2))) # override name and weight
   ```
-  (table/setproto
-   @{:adjacency-table
-       (table
-        ;(mapcat (fn [[_ name & patterns]]
-                   (let [name (keyword name)
-                         data @{} edges @{}]
-                     (each pattern patterns
-                       (match pattern
-                         ['data key val]
-                         (put data key val)
+  (let [graph (table/setproto @{:adjacency-table @{}} Graph)
+        nodes (filter |(= :node (first $)) patterns)
+        edges (filter |(= :edge (first $)) patterns)]
 
-                         ['fn fname args & body]
-                         (put data (keyword fname) ~(fn ,fname ,args ,;body))
+    (each n nodes (:add-node graph n))
+    (each e edges (:add-edge graph e))
 
-                         ['edge name to weight]
-                         (put edges (keyword name) {:to (keyword to) :weight weight})
-
-                         ['edge to (weight (number? weight))]
-                         (put edges (keyword to) {:to (keyword to) :weight weight})
-
-                         ['edge name (to (symbol? to))]
-                         (put edges (keyword name) {:to (keyword to) :weight 1})
-
-                         ['edge to]
-                         (put edges (keyword to) {:to (keyword to) :weight 1})))
-                     [name {:data data :edges edges}]))
-                 nodes))}
-   Graph))
+    graph))
