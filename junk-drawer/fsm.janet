@@ -21,27 +21,42 @@ Check out the docs of that fn for more!
              edges (current-node :edges)]
     (each (edge-name edge) (pairs edges)
       (put self edge-name
-           (fn [self & args] (:goto self (get edge :to) ;args))))))
+           (fn [self & args] (:goto self (get edge :to) ;args)))))
+  self)
 
 (defn- goto [self to & args]
-  (assert (:contains self to)
-          (string/format "%q is not a valid state" to))
+  (assert (:contains self to) (string/format "%q is not a valid state" to))
   (:current-node-call self :leave)
+
   (put self :current to)
   (:apply-edges-functions self)
+
+  (when (nil? (get-in self [:visited to]))
+    (:current-node-call self :init)
+    (put-in self [:visited to] true))
+
   (:current-node-call self :enter ;args))
 
 (def FSM
   (merge digraph/Graph
-         @{:current-node-call current-node-call
+         @{:current @{}
+           :visited @{}
+           :current-node-call current-node-call
            :apply-edges-functions apply-edges-functions
            :goto goto
            :add-state (get digraph/Graph :add-node)}))
 
-(defmacro state [& args] ~(as-macro ,digraph/node ,;args))
-(defmacro transition [& args] ~(as-macro ,digraph/edge ,;args))
+(defn create [& states]
+  (table/setproto (digraph/create ;states)
+                  FSM))
 
-(defmacro def-fsm
+(defmacro transition [& args] ~(as-macro ,digraph/edge ,;args))
+(defmacro state [& args] ~(as-macro ,digraph/node ,;args))
+(defmacro def-state [name & args]
+  ~(def ,(symbol name)
+     (as-macro ,state ,(keyword name) ,;args)))
+
+(defmacro define
   ```
   define a Finite State Machine. This macro creates a factory or blueprint for the
   FSM. Each state is a Struct with transition functions, and optional data. The
@@ -51,6 +66,9 @@ Check out the docs of that fn for more!
   transition. You can also provide addition arguments to a transition fn, and they will
   be passed to the 'going to' state's enter fn.
 
+  If the 'init' function is defined on the state, it will be called only once the first
+  time the state is visited.
+
   (fsm/define colors-fsm
             (state green
                    :enter (fn [self] (print "entering green"))
@@ -58,6 +76,7 @@ Check out the docs of that fn for more!
             (edge next yellow)
 
             (state yellow
+                   :init (fn [self] (print "visiting yellow for the first time"))
                    :enter (fn [self] (print "entering yellow")))
             (edge prev green))
 
@@ -78,10 +97,6 @@ Check out the docs of that fn for more!
   [name & states]
 
   ~(defn ,name [&opt initial-state]
-     (let [machine (table/setproto
-                    (merge @{:current initial-state}
-                           ,(digraph/create ;(map eval states)))
-                    ,FSM)]
-       (when initial-state
-         (:apply-edges-functions machine))
-       machine)))
+     (-> (,create ,;states)
+         (put :current initial-state)
+         (:apply-edges-functions))))
