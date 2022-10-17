@@ -24,12 +24,26 @@ Check out the docs of that fn for more!
            (fn [self & args] (:goto self (get edge :to) ;args)))))
   self)
 
+(defn- apply-data-to-root [self]
+  # clear out old fields
+  (each key (self :current-data-keys)
+    (put self key nil))
+  (put self :current-data-keys @[])
+
+  # apply data to root of fsm
+  (let [current-node (:get-node self (self :current))
+        {:data data} current-node]
+    (each (key val) (pairs data)
+      (array/push (self :current-data-keys) key)
+      (put self key val))))
+
 (defn- goto [self to & args]
   (assert (:contains self to) (string/format "%q is not a valid state" to))
   (:current-node-call self :leave)
 
   (put self :current to)
   (:apply-edges-functions self)
+  (:apply-data-to-root self)
 
   (when (nil? (get-in self [:visited to]))
     (:current-node-call self :init)
@@ -40,9 +54,11 @@ Check out the docs of that fn for more!
 (def FSM
   (merge digraph/Graph
          @{:current @{}
+           :current-data-keys @[]
            :visited @{}
            :current-node-call current-node-call
            :apply-edges-functions apply-edges-functions
+           :apply-data-to-root apply-data-to-root
            :goto goto
            :add-state (get digraph/Graph :add-node)}))
 
