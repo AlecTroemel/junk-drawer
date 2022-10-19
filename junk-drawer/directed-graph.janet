@@ -1,29 +1,32 @@
 # https://medium.com/tebs-lab/implementations-of-graphs-92eb7f121793
 
+
 (defmacro node [name & properties]
-  ~[:node ,(keyword name) ,{:edges @{} :data (table ;properties)}])
+  (if (keyword? name)
+    ~[:node ,(keyword name) ,{:edges @{} :data (table ;properties)}]
+      (error "name must be a keyword")))
 
 (defmacro edge
   ```
-  - (edge edge-name from-node to-node weight)
-  - (edge edge-name from-node to-node)
-  - (edge from-node to-node weight)
-  - (edge from-node to-node)
+  - (edge :edge-name :from-node :to-node weight)
+  - (edge :edge-name :from-node :to-node)
+  - (edge :from-node :to-node weight)
+  - (edge :from-node :to-node)
   ```
   [& pattern]
 
   (match pattern
-    [(name (symbol? name)) (from (symbol? from)) (to (symbol? to)) (weight (number? weight))]
-    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword name) :weight ,weight}]
+    [(name (keyword? name)) (from (keyword? from)) (to (keyword? to)) (weight (number? weight))]
+    ~[:edge ,from {:to ,to :name ,name :weight ,weight}]
 
-    [(name (symbol? name)) (from (symbol? from)) (to (symbol? to))]
-    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword name) :weight 1}]
+    [(name (keyword? name)) (from (keyword? from)) (to (keyword? to))]
+    ~[:edge ,from {:to ,to :name ,name :weight 1}]
 
-    [(from (symbol? from)) (to (symbol? to)) (weight (number? weight))]
-    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword to) :weight ,weight}]
+    [(from (keyword? from)) (to (keyword? to)) (weight (number? weight))]
+    ~[:edge ,from {:to ,to :name ,to :weight ,weight}]
 
-    [(from (symbol? from)) (to (symbol? to))]
-    ~[:edge ,(keyword from) {:to ,(keyword to) :name ,(keyword to) :weight 1}]))
+    [(from (keyword? from)) (to (keyword? to))]
+    ~[:edge ,from {:to ,to :name ,to :weight 1}]))
 
 (defn- contains [self name]
   ```

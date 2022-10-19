@@ -10,6 +10,7 @@ Check out the docs of that fn for more!
 ```)
 
 (defn- current-node-call [self fn-name & args]
+  ""
   (when-let [current-node (:get-node self (self :current))
              leave-fn (get-in current-node [:data fn-name] nil)
              leave-exists (not (nil? leave-fn))]
@@ -25,6 +26,7 @@ Check out the docs of that fn for more!
   self)
 
 (defn- apply-data-to-root [self]
+  ""
   # clear out old fields
   (each key (self :current-data-keys)
     (put self key nil))
@@ -38,18 +40,21 @@ Check out the docs of that fn for more!
       (put self key val))))
 
 (defn- goto [self to & args]
+  ""
   (assert (:contains self to) (string/format "%q is not a valid state" to))
-  (:current-node-call self :leave)
 
-  (put self :current to)
-  (:apply-edges-functions self)
-  (:apply-data-to-root self)
+  (:current-node-call self :leave to)
 
-  (when (nil? (get-in self [:visited to]))
-    (:current-node-call self :init)
-    (put-in self [:visited to] true))
+  (let [from (get self :current)]
+    (put self :current to)
+    (:apply-edges-functions self)
+    (:apply-data-to-root self)
 
-  (:current-node-call self :enter ;args))
+    (when (nil? (get-in self [:visited to]))
+      (:current-node-call self :init)
+      (put-in self [:visited to] true))
+
+    (:current-node-call self :enter from ;args)))
 
 (def FSM
   (merge digraph/Graph
@@ -63,6 +68,7 @@ Check out the docs of that fn for more!
            :add-state (get digraph/Graph :add-node)}))
 
 (defn create [& states]
+  "Create a new FSM from the given states."
   (table/setproto (digraph/create ;states)
                   FSM))
 
@@ -86,15 +92,15 @@ Check out the docs of that fn for more!
   time the state is visited.
 
   (fsm/define colors-fsm
-            (state green
+            (state :green
                    :enter (fn [self] (print "entering green"))
                    :leave (fn [self] (print "entering leaving")))
-            (edge next yellow)
+            (transition :next :green :yellow)
 
-            (state yellow
+            (state :yellow
                    :init (fn [self] (print "visiting yellow for the first time"))
                    :enter (fn [self] (print "entering yellow")))
-            (edge prev green))
+            (transition :prev :yellow :green))
 
   (def *colors* (colors-fsm :green))
 

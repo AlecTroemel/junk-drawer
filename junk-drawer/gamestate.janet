@@ -32,5 +32,4 @@ this module is a thin extension to the Finite state machine.
   ```
   Create a new gamestate manager. Gamestates are switched to using the "switch" method.
   ```
-  []
-  (table/setproto (fsm/create) GamestateManager))
+  [] (table/setproto (fsm/create) GamestateManager))

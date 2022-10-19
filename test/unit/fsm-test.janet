@@ -8,17 +8,17 @@
 
 (fsm/define
  a2b
- (fsm/state a)
- (fsm/transition goto-b a b)
- (fsm/transition goto-c a c)
+ (fsm/state :a)
+ (fsm/transition :goto-b :a :b)
+ (fsm/transition :goto-c :a :c)
 
- (fsm/state b :field "value")
- (fsm/transition goto-a b a)
+ (fsm/state :b :field "value")
+ (fsm/transition :goto-a :b :a)
 
- (fsm/state c
-            :enter (fn [self] (set enter-c-called true))
-            :leave (fn [self] (set leave-c-called true)))
- (fsm/transition goto-a b a))
+ (fsm/state :c
+    :enter (fn [self] (set enter-c-called true))
+    :leave (fn [self] (set leave-c-called true)))
+ (fsm/transition :goto-a :b :a))
 
 (let [*state* (a2b :a)]
   (test/assert (= :a (*state* :current)) "Start at state A.")
