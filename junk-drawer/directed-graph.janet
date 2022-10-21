@@ -1,13 +1,51 @@
-# https://medium.com/tebs-lab/implementations-of-graphs-92eb7f121793
+(setdyn :doc ```
+A directed graph is a collection of nodes with edges, in which the edges have a
+direction. The implimentation here uses an adjaceny matrix under the hood, and
+has these additions...
 
+- Edges may also have a unique name and weight.
+- Nodes may have arbitrary data in them.
 
-(defmacro node [name & properties]
+Nodes and edges are created using their respective macros (node) and (edge).
+A new graph is created using the (create) function.
+
+The following graph functions are public in this module, and are also added to the
+graph objects metatable if you prefer a OoP style.
+
+ - contains
+ - add-node
+ - add-edge
+ - get-node
+ - neighbors
+ - list-nodes
+ - list-edges
+ - find-path
+
+check out the docs on any of those macros/functions for more.
+```)
+
+(defmacro node
+  ```
+  Create a node to be used in the "create" or "add-node" functions. Provide
+  the node name, and any number of key value pairs for the node data. Name
+  must be a keyword.
+
+  (node :name
+    :a "pizza"
+    :b (fn [] "hotdog"))
+  ```
+  [name & properties]
+
   (if (keyword? name)
     ~[:node ,(keyword name) ,{:edges @{} :data (table ;properties)}]
       (error "name must be a keyword")))
 
 (defmacro edge
   ```
+  Create an edge to be used in the "create" or "add-edge" functions. Can be
+  any of these forms. note that weight defaults to 1, and the edge name defaults
+  to the to-node name.
+
   - (edge :edge-name :from-node :to-node weight)
   - (edge :edge-name :from-node :to-node)
   - (edge :from-node :to-node weight)
@@ -28,28 +66,30 @@
     [(from (keyword? from)) (to (keyword? to))]
     ~[:edge ,from {:to ,to :name ,to :weight 1}]))
 
-(defn- contains [self name]
+(defn contains [self name]
   ```
-  Return true if the name already maps to a node, false otherwise
+  Return whether or not the node :name exists in the graph.
   ```
   (not (nil? (get-in self [:adjacency-table name]))))
 
 (defn add-node
   ```
   Add a node to the graph. Throws error if node already exists in the graph.
+  Should use the "node" macro for to create the new node.
   ```
-  [self [NODE name content]]
+  [self [NODE name node-def]]
 
   (if (:contains self name)
     (errorf "graph already contains node %s" name)
-    (put-in self [:adjacency-table name] content)))
+    (put-in self [:adjacency-table name] node-def)))
 
-(defn- add-edge
+(defn add-edge
   ```
-  Add a new edge to the graph. You should use the "edge macro to create the new edge.
+  Add a new edge to the graph. You should use the "edge" macro to create the new edge.
   Both from and to nodes must exist.
   ```
   [self [EDGE from {:to to :name name :weight weight}]]
+
   (cond (not (:contains self from))
         (errorf "graph does not contain from node %s" from)
 
@@ -59,24 +99,34 @@
         (put-in self [:adjacency-table from :edges name]
                 {:to to :weight weight})))
 
-(defn- neighbors
+(defn neighbors
   ```
-  Return an list of tuples (edge-name to weight) of all the neighboring nodes.
+  Return all the neighbors of the node, in the form {:from :name :to :weight}
   ```
   [self from-name]
+
   (if-let [node (get-in self [:adjacency-table from-name])
            edges (get node :edges)]
-    (map (fn [(name data)] [name (get data :to) (get data :weight)])
+    (map (fn [(name data)]
+           {:from from-name
+            :name name
+            :to (get data :to)
+            :weight (get data :weight)})
          (pairs edges))
     []))
 
-(defn- get-node [self name]
+(defn get-node
+  "The data & edges for the provided node name."
+  [self name]
   (get-in self [:adjacency-table name]))
 
-(defn- list-nodes [self]
+(defn list-nodes
+  "Names of all the nodes in the graph."
+  [self]
   (keys (self :adjacency-table)))
 
-(defn- list-edges [self]
+(defn list-edges [self]
+  "Return all the edges in the graph in the form {:from :name :to :weight}."
   [;(mapcat (fn [(from-node-name node)]
             (map (fn [(edge-name edge)]
                    (table/to-struct
@@ -89,9 +139,6 @@
   (array/push priority-queue [data weight]))
 
 (defn- priority-pop [priority-queue]
-  "Pop the element with the lowest weight, items should be in form (data weight)."
-
-  # Find lowest weighted element
   (var lowest-i 0)
   (var lowest-weight 0)
 
@@ -101,13 +148,32 @@
       (set lowest-i i)
       (set lowest-weight weight)))
 
-  # remove it from the queue, then return its data
   (let [(data weight) (get priority-queue lowest-i)]
     (array/remove priority-queue lowest-i)
     data))
 
-(defn- find-path
+(defn manhattan-distance-heuristic [graph goal next]
+  (let [{:data goal-data} (:get-node graph goal)
+        {:data next-data} (:get-node graph next)]
+    (+ (math/abs (- (goal-data :x) (next-data :x)))
+       (math/abs (- (goal-data :y) (next-data :y))))))
+
+(defn find-path
   ```
+  Find the shortest path from the "start" node to "end" node. Uses a breadth first
+  search which takes into account edge weights and exits out early if goal is found.
+
+  You can also provided an optional (fn heuristic [graph goal-name next-node-name] number)
+  function to further improve the search. Consider adding x,y coords to your node and
+  using a heuristic like this:
+
+  (node :name-here :x 1 :y 3)
+
+  (defn manhattan-distance-heuristic [graph goal next]
+    (let [{:data goal-data} (:get-node graph goal)
+          {:data next-data} (:get-node graph next)]
+      (+ (math/abs (- (goal-data :x) (next-data :x)))
+         (math/abs (- (goal-data :y) (next-data :y))))))
   ```
   [self start goal &opt heuristic]
 
@@ -116,9 +182,10 @@
   (let [frontier @[[start 0]]
         came-from @{}
         cost-so-far @{start 0}]
+
     (loop [current :iterate (priority-pop frontier)
            :until (= current goal)
-           (edge-name next weight) :in (:neighbors self current)
+           {:name edge-name :to next :weight weight} :in (:neighbors self current)
            :let [new-cost (+ (cost-so-far current) weight)]
            :while (or (nil? (get came-from next))
                       (< new-cost (cost-so-far next)))]
@@ -148,19 +215,16 @@
 
 (defn create [& patterns]
   ```
-  Instantiate a new directed graph. Can provide starting nodes in convenient syntax.
+  Instantiate a new directed graph with optional starting nodes and edges.
+  See "node" and "edge" macros for more.
 
-  Heres a complete example
-
-  (init
-   (node green
-         (data :key "val")
-         (edge yellow)) # default weight 1
-   (node yellow
-         (edge green 3) # override weight
-         (edge panic red)) # override name
-   (node red
-         (edge calm yellow 2))) # override name and weight
+  (create
+   (node :red)
+   (node :green
+      :key "val"
+      :say (fn [self] "hello world"))
+   (edge :red :green)
+   (edge :panic :green :red 2)) # override name and weight
   ```
   (let [graph (table/setproto @{:adjacency-table @{}} Graph)
         nodes (filter |(= :node (first $)) patterns)

@@ -14,7 +14,6 @@
                   (:contains graph :green))
              "graph init creates provided nodes")
 
-
 (:add-node graph (node :blue :another "data"))
 (test/assert (:contains graph :blue)
              "contains returns true for just added node")
