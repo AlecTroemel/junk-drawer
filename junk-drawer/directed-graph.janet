@@ -61,10 +61,14 @@
 
 (defn- neighbors
   ```
-  Return an list of (node-name, {:weight :name}) of all the neighboring nodes.
+  Return an list of tuples (edge-name to weight) of all the neighboring nodes.
   ```
   [self from-name]
-  (pairs (get-in self [:adjacency-table from-name :edges])))
+  (if-let [node (get-in self [:adjacency-table from-name])
+           edges (get node :edges)]
+    (map (fn [(name data)] [name (get data :to) (get data :weight)])
+         (pairs edges))
+    []))
 
 (defn- get-node [self name]
   (get-in self [:adjacency-table name]))
@@ -81,6 +85,56 @@
                  (pairs (get node :edges))))
           (pairs (self :adjacency-table)))])
 
+(defn- priority-push [priority-queue data weight]
+  (array/push priority-queue [data weight]))
+
+(defn- priority-pop [priority-queue]
+  "Pop the element with the lowest weight, items should be in form (data weight)."
+
+  # Find lowest weighted element
+  (var lowest-i 0)
+  (var lowest-weight 0)
+
+  (for i 0 (length priority-queue)
+    (when-let [[data weight] (get priority-queue i)
+               is-lower (< weight lowest-weight)]
+      (set lowest-i i)
+      (set lowest-weight weight)))
+
+  # remove it from the queue, then return its data
+  (let [(data weight) (get priority-queue lowest-i)]
+    (array/remove priority-queue lowest-i)
+    data))
+
+(defn- find-path
+  ```
+  ```
+  [self start goal &opt heuristic]
+
+  (default heuristic (fn [& rest] 0))
+
+  (let [frontier @[[start 0]]
+        came-from @{}
+        cost-so-far @{start 0}]
+    (loop [current :iterate (priority-pop frontier)
+           :until (= current goal)
+           (edge-name next weight) :in (:neighbors self current)
+           :let [new-cost (+ (cost-so-far current) weight)]
+           :while (or (nil? (get came-from next))
+                      (< new-cost (cost-so-far next)))]
+      (put cost-so-far next new-cost)
+      (priority-push frontier next (+ new-cost (heuristic self goal next)))
+      (put came-from next current))
+
+    # follow the came-from backwards from the goal to the start.
+    (var current goal)
+    (let [path @[]]
+      (while (not= current start)
+        (array/push path current)
+        (set current (get came-from current)))
+      (array/push path start)
+      (reverse path))))
+
 (def Graph
   @{:contains contains
     :add-node add-node
@@ -89,6 +143,7 @@
     :neighbors neighbors
     :list-nodes list-nodes
     :list-edges list-edges
+    :find-path find-path
     :adjacency-table @{}})
 
 (defn create [& patterns]
