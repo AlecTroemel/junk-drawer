@@ -16,8 +16,8 @@
  (fsm/transition :goto-a :b :a)
 
  (fsm/state :c
-    :enter (fn [self] (set enter-c-called true))
-    :leave (fn [self] (set leave-c-called true)))
+    :enter (fn [self from] (set enter-c-called true))
+    :leave (fn [self to] (set leave-c-called true)))
  (fsm/transition :goto-a :b :a))
 
 (let [*state* (a2b :a)]
