@@ -152,12 +152,6 @@ check out the docs on any of those macros/functions for more.
     (array/remove priority-queue lowest-i)
     data))
 
-(defn manhattan-distance-heuristic [graph goal next]
-  (let [{:data goal-data} (:get-node graph goal)
-        {:data next-data} (:get-node graph next)]
-    (+ (math/abs (- (goal-data :x) (next-data :x)))
-       (math/abs (- (goal-data :y) (next-data :y))))))
-
 (defn find-path
   ```
   Find the shortest path from the "start" node to "end" node. Uses a breadth first

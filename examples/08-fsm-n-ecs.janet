@@ -3,16 +3,17 @@
 # Since FSM's are just functions that return tables,
 # they can be added as components to entities!
 # here's a (contrived & useless) example
-
 (fsm/define
-  colored-warnings
-  {:green
-   {:warn |(:goto $ :yellow)}
-   :yellow
-   {:panic |(:goto $ :red)
-    :clear |(:goto $ :green)}
-   :red
-   {:calm |(:goto $ :yellow)}})
+ colored-warnings
+ (fsm/state :green)
+ (fsm/transition :warn :green :yellow)
+
+ (fsm/state :yellow)
+ (fsm/transition :panic :yellow :red)
+ (fsm/transition :clear :yellow :green)
+
+ (fsm/state :red)
+ (fsm/transition :calm :red :yellow))
 
 (def-component position :x :number :y :number)
 

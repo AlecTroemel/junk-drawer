@@ -1,13 +1,16 @@
 (use /junk-drawer)
 
+
 (fsm/define
-  colors
-  {:green
-   {:next |(:goto $ :yellow)}
-   :yellow
-   {:next |(:goto $ :red)}
-   :red
-   {:next |(:goto $ :green)}})
+ colors
+ (fsm/state :green)
+ (fsm/transition :next :green :yellow)
+
+ (fsm/state :yellow)
+ (fsm/transition :next :yellow :red)
+
+ (fsm/state :red)
+ (fsm/transition :next :red :green))
 
 (def-tag next-color)
 

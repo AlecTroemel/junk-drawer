@@ -23,12 +23,13 @@ Check out the docs of that fn for more!
     (each (edge-name edge) (pairs edges)
       (put self edge-name
            (fn [self & args] (:goto self (get edge :to) ;args)))))
+
   self)
 
 (defn- apply-data-to-root [self]
   ""
   # clear out old fields
-  (each key (self :current-data-keys)
+  (each key (get self :current-data-keys [])
     (put self key nil))
   (put self :current-data-keys @[])
 
@@ -37,7 +38,9 @@ Check out the docs of that fn for more!
         {:data data} current-node]
     (each (key val) (pairs data)
       (array/push (self :current-data-keys) key)
-      (put self key val))))
+      (put self key val)))
+
+  self)
 
 (defn- goto [self to & args]
   ""
@@ -121,4 +124,7 @@ Check out the docs of that fn for more!
   ~(defn ,name [&opt initial-state]
      (-> (,create ,;states)
          (put :current initial-state)
-         (:apply-edges-functions))))
+         (put :__validate__ (fn [& args] true))
+         (put :__id__ ,(keyword name))
+         (:apply-edges-functions)
+         (:apply-data-to-root))))

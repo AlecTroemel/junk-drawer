@@ -29,19 +29,18 @@
 (:add-edge *GS* (gamestate/transition :my-transition :state-a :state-b))
 
 (:goto *GS* :state-a)
-# (test/assert (state-a :init-called) "State A init called after switching.")
-# (:update *GS* 2)
-# (test/assert (state-a :update-called) "State A updated called.")
-# (:draw *GS*)
-# (test/assert (state-a :draw-called) "State A draw called.")
+(test/assert (get *GS* :init-called) "State A init called after switching.")
+(:update *GS* 2)
+(test/assert (get *GS* :update-called) "State A updated called.")
+(:draw *GS*)
+(test/assert (get *GS* :draw-called) "State A draw called.")
 
-# (:my-transition *GS*)
-# (test/assert (state-a :init-b-called) "State B init called after switching.")
+(:my-transition *GS*)
+(test/assert (get *GS* :init-b-called) "State B init called after switching.")
 
-# (:update *GS* 2)
-# (test/assert (state-a :update-b-called) "State A updated called.")
-# (:draw *GS*)
-# (test/assert (state-a :draw-b-called) "State A draw called.")
-
+(:update *GS* 2)
+(test/assert (get *GS* :update-b-called) "State A updated called.")
+(:draw *GS*)
+(test/assert (get *GS* :draw-b-called) "State A draw called.")
 
 (test/end-suite)
