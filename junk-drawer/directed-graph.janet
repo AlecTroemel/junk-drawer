@@ -196,7 +196,6 @@ check out the docs on any of those macros/functions for more.
 
     # follow the came-from backwards from the goal to the start.
     (var current {:from goal})
-    (var count 0)
     (let [path @[]]
       (while (not= (get current :from) start)
         (array/push path current)
