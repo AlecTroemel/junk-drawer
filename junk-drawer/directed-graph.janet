@@ -162,6 +162,7 @@ check out the docs on any of those macros/functions for more.
   ```
   Find the shortest path from the "start" node to "end" node. Uses a breadth first
   search which takes into account edge weights and exits out early if goal is found.
+  Returns a list of the edge-names to take from start to reach the goal.
 
   You can also provided an optional (fn heuristic [graph goal-name next-node-name] number)
   function to further improve the search. Consider adding x,y coords to your node and
@@ -180,7 +181,7 @@ check out the docs on any of those macros/functions for more.
   (default heuristic (fn [& rest] 0))
 
   (let [frontier @[[start 0]]
-        came-from @{}
+        came-from @{} # path A->B is stored as (came-from B) => A
         cost-so-far @{start 0}]
 
     (loop [current :iterate (priority-pop frontier)
@@ -191,16 +192,22 @@ check out the docs on any of those macros/functions for more.
                       (< new-cost (cost-so-far next)))]
       (put cost-so-far next new-cost)
       (priority-push frontier next (+ new-cost (heuristic self goal next)))
-      (put came-from next current))
+      (put came-from next {:from current :edge-name edge-name}))
 
     # follow the came-from backwards from the goal to the start.
-    (var current goal)
+    (var current {:from goal})
+    (var count 0)
     (let [path @[]]
-      (while (not= current start)
+      (while (not= (get current :from) start)
         (array/push path current)
-        (set current (get came-from current)))
-      (array/push path start)
-      (reverse path))))
+        (set current (get came-from (get current :from))))
+      (array/push path current)
+
+      (->> (reverse path)
+           (map |(get $ :edge-name))
+           (filter |(not (nil? $)))
+           (splice)
+           (tuple)))))
 
 (def Graph
   @{:contains contains
