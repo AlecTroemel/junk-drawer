@@ -11,8 +11,9 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small
 ### Contents:
 
 - `ecs`: A sparse set based Entity Component System
-- `fsm`: Finite(ish) State Machine
-- `gamestate`: Easy gamestate management.
+- `directed graph`: graph implementation with path finding function.
+- `fsm`: Finite(ish) State Machine (built off of directed graph)
+- `gamestate`: Easy gamestate management (built off of directed graph)
 - `timers`: Delayed & Scheduled functions (requires using ECS)
 - `messages`: Communication between systems (requires using ECS)
 - `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS)
@@ -23,13 +24,15 @@ Here's an obligitory example that uses most the stuff here.
 (use junk-drawer)
 
 (fsm/define
-  colors
-  {:green
-   {:next |(:goto $ :yellow)}
-   :yellow
-   {:next |(:goto $ :red)}
-   :red
-   {:next |(:goto $ :green)}})
+ colors
+ (fsm/state :green)
+ (fsm/transition :next :green :yellow)
+
+ (fsm/state :yellow)
+ (fsm/transition :next :yellow :red)
+
+ (fsm/state :red)
+ (fsm/transition :next :red :yellow))
 
 (def-tag next-color)
 
@@ -50,8 +53,8 @@ Here's an obligitory example that uses most the stuff here.
 
 (def GS (gamestate/init))
 
-(def example
-  {:name "Example Gamestate"
+(gamestate/def-state example
+   :name "Example Gamestate"
    :world (create-world)
    :init (fn [self]
            (let [world (get self :world)]
@@ -68,9 +71,10 @@ Here's an obligitory example that uses most the stuff here.
                            (fn [wld dt]
                              (messages/send wld :next next-color)))))
    :update (fn [self dt]
-             (:update (self :world) dt))})
+             (:update (self :world) dt)))
 
-(:push GS example)
+(:add-state GS example)
+(:goto GS :example)
 
 (for i 0 20
   (:update GS 1))

@@ -1,36 +1,85 @@
+(import ./directed-graph :as "digraph" :export true)
+
 (setdyn :doc ```
 FSM (short for Finite State Machine) is a model where you define states (or nodes)
 and transitions between those states, with a machine only "at" a single state at a time.
 
-The bulk of this module consists of the (fsm/define) function, which is used to create
-a state machine "blueprint" function. Check out the docs of that fn for more!
+This module extends the directed-graph. The main way you'll use it is with
+ the (fsm/define) function, which is used to create a state machine "blueprint" function.
+Check out the docs of that fn for more!
 ```)
 
+(defn- current-node-call [self fn-name & args]
+  ""
+  (when-let [current-node (:get-node self (self :current))
+             leave-fn (get-in current-node [:data fn-name] nil)
+             leave-exists (not (nil? leave-fn))]
+    (leave-fn self ;args)))
+
+(defn- apply-edges-functions [self]
+  "Create functions on self for each edge in the current node"
+  (when-let [current-node (:get-node self (self :current))
+             edges (current-node :edges)]
+    (each (edge-name edge) (pairs edges)
+      (put self edge-name
+           (fn [self & args] (:goto self (get edge :to) ;args)))))
+
+  self)
+
+(defn- apply-data-to-root [self]
+  ""
+  # clear out old fields
+  (each key (get self :current-data-keys [])
+    (put self key nil))
+  (put self :current-data-keys @[])
+
+  # apply data to root of fsm
+  (let [current-node (:get-node self (self :current))
+        {:data data} current-node]
+    (each (key val) (pairs data)
+      (array/push (self :current-data-keys) key)
+      (put self key val)))
+
+  self)
+
 (defn- goto [self to & args]
-  (assert (self to) (string/format "%q is not a valid state" to))
+  ""
+  (assert (:contains self to) (string/format "%q is not a valid state" to))
 
-  # Call leave method on old state
-  (when (self :leave)
-    (:leave self))
+  (:current-node-call self :leave to)
 
-  # clear out old state methods from top of the table
-  (each state-d (get self :state-data [])
-    (put self state-d nil))
+  (let [from (get self :current)]
+    (put self :current to)
+    (:apply-edges-functions self)
+    (:apply-data-to-root self)
 
-  # set current to new state
-  (put self :current to)
+    (when (nil? (get-in self [:visited to]))
+      (:current-node-call self :init)
+      (put-in self [:visited to] true))
 
-  # put new states state-data on top of table
-  (put self :state-data (keys (self (self :current))))
-  (each state-d (self :state-data)
-    (put self
-         state-d
-         (get-in self [(self :current) state-d])))
+    (:current-node-call self :enter from ;args)))
 
-  # call enter on new state
-  (when (self :enter)
-    (:enter self ;args)))
+(def FSM
+  (merge digraph/Graph
+         @{:current @{}
+           :current-data-keys @[]
+           :visited @{}
+           :current-node-call current-node-call
+           :apply-edges-functions apply-edges-functions
+           :apply-data-to-root apply-data-to-root
+           :goto goto
+           :add-state (get digraph/Graph :add-node)}))
 
+(defn create [& states]
+  "Create a new FSM from the given states."
+  (table/setproto (digraph/create ;states)
+                  FSM))
+
+(defmacro transition [& args] ~(as-macro ,digraph/edge ,;args))
+(defmacro state [& args] ~(as-macro ,digraph/node ,;args))
+(defmacro def-state [name & args]
+  ~(def ,(symbol name)
+     (as-macro ,state ,(keyword name) ,;args)))
 
 (defmacro define
   ```
@@ -38,10 +87,23 @@ a state machine "blueprint" function. Check out the docs of that fn for more!
   FSM. Each state is a Struct with transition functions, and optional data. The
   Resulting "factory" is pass the starting state when an actual FSM is instantiated.
 
-  (fsm/define
-   colors-fsm
-   {:green  {:next |(:goto $ self :yellow)}
-    :yellow {:prev |(:goto $ self :green)}})
+  If 'enter' or 'leave' functions are defined in a state, then will be called during the
+  transition. You can also provide addition arguments to a transition fn, and they will
+  be passed to the 'going to' state's enter fn.
+
+  If the 'init' function is defined on the state, it will be called only once the first
+  time the state is visited.
+
+  (fsm/define colors-fsm
+            (state :green
+                   :enter (fn [self] (print "entering green"))
+                   :leave (fn [self] (print "entering leaving")))
+            (transition :next :green :yellow)
+
+            (state :yellow
+                   :init (fn [self] (print "visiting yellow for the first time"))
+                   :enter (fn [self] (print "entering yellow")))
+            (transition :prev :yellow :green))
 
   (def *colors* (colors-fsm :green))
 
@@ -52,27 +114,17 @@ a state machine "blueprint" function. Check out the docs of that fn for more!
   (:next *colors*)
   (*colors* :current) # -> :yellow
 
-  If 'enter' or 'leave' functions are defined in a state, then will be called during the
-  transition. You can also provide addition arguments to a transition fn, and they will
-  be passed to the 'going to' state's enter fn.
-
-  Additionally, you can put any arbitrary data/method in a state, and it will be available
+  # TODO
+  Additionally, you can put any arbitrary data/methods in a state, and it will be available
   on the root machine when in that state. Just remember that any data will be removed when
   you leave the state!
   ```
+  [name & states]
 
-  [name states]
-
-  (with-syms [$state-names]
-    ~(defn ,name [initial-state]
-       ,(let [$state-names (keys states)]
-          ~(assert (find |(= $ initial-state) ,$state-names)
-                   (string/format "initial state must be in %q" ,$state-names)))
-       (let [machine (table/setproto (merge
-                                      @{:current initial-state
-                                        :goto ,goto}
-                                      ,states)
-                                     @{:__id__ ,(keyword name)
-                                       :__validate__ (fn [& args] true)})]
-         (:goto machine initial-state)
-         machine))))
+  ~(defn ,name [&opt initial-state]
+     (-> (,create ,;states)
+         (put :current initial-state)
+         (put :__validate__ (fn [& args] true))
+         (put :__id__ ,(keyword name))
+         (:apply-edges-functions)
+         (:apply-data-to-root))))
