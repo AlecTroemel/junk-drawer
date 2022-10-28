@@ -38,6 +38,8 @@ Here's an obligitory example that uses most the stuff here.
 
 (def-tag next-color)
 
+(def-component-alias position vector/from-named)
+
 (def-system colored-printer
   {color-fsms [:colors]}
   (each [c] color-fsms
@@ -60,7 +62,8 @@ Here's an obligitory example that uses most the stuff here.
    :world (create-world)
    :init (fn [self]
            (let [world (get self :world)]
-             (add-entity world (colors :green))
+             (add-entity world (colors :green)
+                               (position :x 1 :y 2))
              (add-entity world (colors :red))
              (register-system world timers/update-sys)
              (register-system world messages/update-sys)
