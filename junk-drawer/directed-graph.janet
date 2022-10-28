@@ -159,16 +159,16 @@ check out the docs on any of those macros/functions for more.
   Returns a list of the edge-names to take from start to reach the goal.
 
   You can also provided an optional (fn heuristic [graph goal-name next-node-name] number)
-  function to further improve the search. Consider adding x,y coords to your node and
+  function to further improve the search. Consider using the vector module with your node and
   using a heuristic like this:
 
-  (node :name-here :x 1 :y 3)
+  (node :name-here :position (vector/new 1 3))
 
   (defn manhattan-distance-heuristic [graph goal next]
     (let [{:data goal-data} (:get-node graph goal)
           {:data next-data} (:get-node graph next)]
-      (+ (math/abs (- (goal-data :x) (next-data :x)))
-         (math/abs (- (goal-data :y) (next-data :y))))))
+      (:length2 (goal-data :position)
+                (next-data :position))))
   ```
   [self start goal &opt heuristic]
 

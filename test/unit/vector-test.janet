@@ -143,6 +143,13 @@
   (test/assert (> 0.001 (- (vec :y) 0)) "from polar y"))
 (test/end-suite)
 
+# from-tuple
+(test/start-suite 10)
+(let [vec (vector/from-tuple [1 3])]
+  (test/assert (= 1 (vec :x)) "from tuple x")
+  (test/assert (= 3 (vec :y)) "from tuple y"))
+(test/end-suite)
+
 # random-direction
 (test/start-suite 11)
 (let [seed 1

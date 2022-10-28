@@ -1,3 +1,8 @@
+(setdyn :doc ```
+2D vector which providing most of the things you do with vectors.
+Represented as a table {:x number :y number}.
+```)
+
 (defn vector?
   "Is the object a vector."
   [self]
@@ -64,31 +69,31 @@
   (and (<= (self :x) (v :x))
        (<= (self :y) (v :y))))
 
-(defn length2
+(defn vlength2
   "The squared length of vector."
   [self]
   (+ (* (self :x) (self :x))
      (* (self :y) (self :y))))
 
-(defn length
+(defn vlength
   "The length of the vector."
   [self]
-  (math/sqrt (:length2 self)))
+  (math/sqrt (vlength2 self)))
 
 (defn to-polar
   "Polar version of the vector"
   [self]
-  (table/setproto {:x (math/atan2 (self :x) (self :y))
-                   :y (:length self)}
+  (table/setproto @{:x (math/atan2 (self :x) (self :y))
+                    :y (vlength self)}
                   (table/getproto self)))
 
 (defn distance2
-  "The squared distance between vectors A and B"
+  "The squared distance of this vector to the other."
   [self v]
-  (assert (vector? a) "a must be a vector.")
-  (assert (vector? b) "b must be a vector.")
-  (let [dx (- (a :x) (b :x))
-        dy (- (a :y) (b :y))]
+  (assert (vector? self) "a must be a vector.")
+  (assert (vector? v) "v must be a vector.")
+  (let [dx (- (self :x) (v :x))
+        dy (- (self :y) (v :y))]
     (+ (* dx dx)
        (* dy dy))))
 
@@ -100,7 +105,7 @@
 (defn normalize
   "Normalize the vector in place."
   [self]
-  (if-let [l (:length self)
+  (if-let [l (vlength self)
            greater-then-zero? (> l 0)]
     (:divide self l)
     self))
@@ -152,7 +157,7 @@
 
 (defn cross
   "The cross product of this vector with another."
-  [self b]
+  [self v]
   (assert (vector? v) "v must be a vector.")
   (- (* (self :x) (v :y))
      (* (self :y) (v :x))))
@@ -161,7 +166,7 @@
   "Truncate this vector length to max-length."
   [self max-length]
   (let [s (/ (* max-length max-length)
-             (:length2 self))]
+             (vlength2 self))]
     (put self :x (* (self :x) s))
     (put self :y (* (self :y) s))))
 
@@ -183,8 +188,8 @@
     :equal? equal?
     :lt? lt?
     :lte? lte?
-    :length2 length2
-    :length length
+    :length2 vlength2
+    :length vlength
     :to-polar to-polar
     :distance2 distance2
     :distance distance
@@ -213,6 +218,12 @@
   (default radius 1)
   (new (* (math/cos angle) radius)
        (* (math/sin angle) radius)))
+
+(defn from-tuple
+  "Construct a new vector from the tuple [x y], look at (:to-tuple vec)."
+  [tup]
+  (assert (= (length tup) 2) "length of tuple must be 2.")
+  (new ;tup))
 
 (defn random-direction
   "Construct a new vector of random length in random direction."
