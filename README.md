@@ -10,13 +10,15 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small
 
 ### Contents:
 
-- `ecs`: A sparse set based Entity Component System
+- `ecs`: A sparse set based Entity Component System.
 - `directed graph`: graph implementation with path finding function.
-- `fsm`: Finite(ish) State Machine (built off of directed graph)
-- `gamestate`: Easy gamestate management (built off of directed graph)
-- `timers`: Delayed & Scheduled functions (requires using ECS)
-- `messages`: Communication between systems (requires using ECS)
-- `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS)
+- `vectors`: common 2d vector functions.
+- `fsm`: Finite(ish) State Machine (built off of directed graph).
+- `gamestate`: Easy gamestate management (built off of directed graph).
+- `timers`: Delayed & Scheduled functions (requires using ECS).
+- `messages`: Communication between systems (requires using ECS).
+- `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS).
+
 
 Here's an obligitory example that uses most the stuff here.
 

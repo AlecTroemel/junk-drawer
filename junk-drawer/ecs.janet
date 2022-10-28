@@ -51,6 +51,18 @@ This implimentation uses a (relatively naive) sparse set data structure.
                      @{:__id__ ,(keyword name)
                        :__validate__ (fn [& args] false)})))
 
+(defmacro def-component-alias
+  ```
+  Define a component alias. Constructor fn should return a component, which
+  will be given a new id (the name of the alias).
+
+  (def-component-alias position vector/new)
+  ```
+  [name constructor-fn]
+  ~(defn ,name [& args]
+     (merge-into (,constructor-fn ;args)
+                 ,@{:__id__ (keyword name)})))
+
 (defmacro def-system
   ```
   Define a system fn that operates over queries. Queries are lists

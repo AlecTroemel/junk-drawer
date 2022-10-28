@@ -150,6 +150,13 @@
   (test/assert (= 3 (vec :y)) "from tuple y"))
 (test/end-suite)
 
+# from-named
+(test/start-suite 10)
+(let [vec (vector/from-named :x 1 :y 3)]
+  (test/assert (= 1 (vec :x)) "from tuple x")
+  (test/assert (= 3 (vec :y)) "from tuple y"))
+(test/end-suite)
+
 # random-direction
 (test/start-suite 11)
 (let [seed 1

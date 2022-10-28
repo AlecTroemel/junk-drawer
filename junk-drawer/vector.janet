@@ -225,6 +225,11 @@ Represented as a table {:x number :y number}.
   (assert (= (length tup) 2) "length of tuple must be 2.")
   (new ;tup))
 
+(defn from-named
+  "Construct a new vector from the named args :x :y, useful when using def-component-alias."
+  [&named x y]
+  (new x y))
+
 (defn random-direction
   "Construct a new vector of random length in random direction."
   [&opt len-min len-max seed]
