@@ -9,7 +9,7 @@
 (var world (create-world))
 
 (def-component a :val :number)
-(def-component b :val :number)
+(def-component-alias b a)
 
 (def-system ab-sys
   {abs [:a :b]}

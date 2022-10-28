@@ -4,8 +4,8 @@
 # Components create tables by listing keyname type-schema.
 # The type-schema given can by any form of the syntax listed in spork/schema
 # https://github.com/janet-lang/spork/blob/master/spork/schema.janet#L17
-(def-component position :x :number :y :number)
-(def-component velocity :x :number :y :number)
+(def-component-alias position vector/from-named)
+(def-component-alias velocity vector/from-named)
 (def-component lives :count :number)
 
 # create a world to hold your entities + systems
@@ -30,8 +30,7 @@
 (def-system move
   {moveables [:position :velocity]}
   (each [pos vel] moveables
-    (put pos :x (+ (pos :x) (* dt (vel :x))))
-    (put pos :y (+ (pos :y) (* dt (vel :y))))))
+    (:add pos (-> vel (:clone) (:multiply dt)))))
 
 # you'll need to register a system on a world
 (register-system world move)
@@ -53,10 +52,11 @@
 #
 # In this example the entity will be destroyed if its x,y coords both become 0.
 # Given the entities defined above this should take 10 iterations
+(def ZERO_VEC (vector/new 0 0))
 (def-system remove-dead
   {entities [:entity :position] wld :world}
   (each [ent pos] entities
-    (when (deep= pos @{:x 0 :y 0})
+    (when (:equal? pos ZERO_VEC)
       (print "time to die entity id " ent)
       (remove-entity wld ent))))
 
@@ -68,13 +68,13 @@
 (def-tag monster)
 
 (add-entity world
-            (position :x 0 :y 0)
-            (velocity :x 1 :y 1)
+            (position :y 0 :y 0)
+            (velocity :y 1 :y 1)
             (monster))
 
 (add-entity world
-            (position :x 0 :y 5)
-            (velocity :x 1 :y 0)
+            (position :y 0 :y 5)
+            (velocity :y 1 :y 0)
             (monster))
 
 (def-system print-monsters
@@ -86,7 +86,7 @@
     (pp pos)
     (when-let [[e] (filter (fn [[e p l]]
                              (and (not= ent e)
-                                  (deep= p pos)))
+                                  (:equal? p pos)))
                            entities)
                [i p life] e]
 
