@@ -1,18 +1,18 @@
 (defn vector?
-  "Whether or not object is a vector."
+  "Is the object a vector."
   [self]
   (and (table? self)
        (number? (self :x))
        (number? (self :y))))
 
 (defn clone
-  "deep copy of the vector."
+  "Deep copy of the vector."
   [self]
   (table/setproto @{:x (self :x) :y (self :y)}
                   (table/getproto self)))
 
 (defn unpack
-  "the vector as a tuple."
+  "The vector as a tuple."
   [self] (values self))
 
 (defn- apply-operator [op a b]
@@ -24,27 +24,27 @@
     a))
 
 (defn add
-  "add either a number or another vector to the first vector. Mutates vector A."
-  [a b] (apply-operator + a b))
+  "Add either a number or another vector to this vector. Mutates the first vector."
+  [self v] (apply-operator + self v))
 
 (defn subtract
-  "subtract either a number or another vector to the first vector. Mutates vector A."
-  [a b] (apply-operator - a b))
+  "Subtract either a number or another vector from the this vector. Mutates the first vector."
+  [self v] (apply-operator - self v))
 
 (defn multiply
-  "multiply vector A by either a number or another vector. Mutates vector A."
-  [a b] (apply-operator * a b))
+  "Multiply this vector by either a number or another vector. Mutates the first vector."
+  [self v] (apply-operator * self v))
 
 (defn divide
-  "divide vector A by either a number or another vector. Mutates vector A."
-  [a b] (apply-operator / a b))
+  "Divide this vector by either a number or another vector. Mutates the first vector."
+  [self v] (apply-operator / self v))
 
 (defn equal?
-  "are the two vectors equal. Optionaly round coordinates nearest int before comparing."
-  [a b &opt round]
+  "Is this vector equal to another? Optionaly round coordinates nearest int before comparing."
+  [self v &opt round]
   (default round false)
-  (let [{:x ax :y ay} a
-        {:x bx :y by} b]
+  (let [{:x ax :y ay} self
+        {:x bx :y by} v]
     (if round
       (and (= (math/round ax) (math/round bx))
            (= (math/round ay) (math/round by)))
@@ -52,37 +52,39 @@
            (= ay by)))))
 
 (defn lt?
-  "is vector a less then vector b?"
-  [a b]
-  (or (< (a :x) (b :x))
-      (and (= (a :x) (b :x))
-           (< (a :y) (b :y)))))
+  "Is vector A less then vector B?"
+  [self v]
+  (or (< (self :x) (v :x))
+      (and (= (self :x) (v :x))
+           (< (self :y) (v :y)))))
 
 (defn lte?
-  "is vector a less then or equal vector b?"
-  [a b]
-  (and (<= (a :x) (b :x))
-       (<= (a :y) (b :y))))
+  "Is vector A less then or equal vector B?"
+  [self v]
+  (and (<= (self :x) (v :x))
+       (<= (self :y) (v :y))))
 
 (defn length2
+  "The squared length of vector."
   [self]
   (+ (* (self :x) (self :x))
      (* (self :y) (self :y))))
 
 (defn length
+  "The length of the vector."
   [self]
   (math/sqrt (:length2 self)))
 
 (defn to-polar
-  "polar version of the vector"
+  "Polar version of the vector"
   [self]
   (table/setproto {:x (math/atan2 (self :x) (self :y))
                    :y (:length self)}
                   (table/getproto self)))
 
 (defn distance2
-  "the squared distance between vectors A and B"
-  [a b]
+  "The squared distance between vectors A and B"
+  [self v]
   (assert (vector? a) "a must be a vector.")
   (assert (vector? b) "b must be a vector.")
   (let [dx (- (a :x) (b :x))
@@ -91,9 +93,9 @@
        (* dy dy))))
 
 (defn distance
-  "the distance between vectors A and B."
-  [a b]
-  (math/sqrt (:distance2 a b)))
+  "The distance between vectors A and B."
+  [self v]
+  (math/sqrt (:distance2 self v)))
 
 (defn normalize
   "Normalize the vector in place."
@@ -104,7 +106,7 @@
     self))
 
 (defn rotate
-  "rotate the vector by angle phi."
+  "Rotate the vector by angle phi in place."
   [self phi]
   (let [c (math/cos phi)
         s (math/sin phi)]
@@ -114,13 +116,14 @@
                     (* c (self :y))))))
 
 (defn perpendicular
-  "return a new vector perpendicular to this one."
+  "Return a new vector perpendicular to this one."
   [self]
   (table/setproto @{:x (- (self :y)) :y (self :x)}
                   (table/getproto self)))
 
 
 (defn preject-on
+  "Return a new vector which is the projection of this one on vector V."
   [self v]
   (assert (vector? v) "v must be a vector.")
   (let [{:x vx :y vy} v
@@ -133,6 +136,7 @@
 
 
 (defn mirror-on
+  "Return a new vector which is this one mirrored onto vector V."
   [self v]
   (assert (vector? v) "v must be a vector.")
   (let [{:x sx :y sy} self
@@ -147,14 +151,14 @@
                     (table/getproto self))))
 
 (defn cross
-  ""
-  [self v]
+  "The cross product of this vector with another."
+  [self b]
   (assert (vector? v) "v must be a vector.")
   (- (* (self :x) (v :y))
      (* (self :y) (v :x))))
 
 (defn trim
-  "truncate vector length to max-length."
+  "Truncate this vector length to max-length."
   [self max-length]
   (let [s (/ (* max-length max-length)
              (:length2 self))]
@@ -162,7 +166,7 @@
     (put self :y (* (self :y) s))))
 
 (defn angle-to
-  ""
+  "The angle of this vector to another."
   [self &opt other]
   (if other
     (- (math/atan2 (self :x) (self :y))
@@ -195,7 +199,9 @@
     :__validate__ vector?
     :__id__ :vector})
 
-(defn new [&opt x y]
+(defn new
+  "Construct a new vector with given x,y coordinates."
+  [&opt x y]
   (default x 0)
   (default y 0)
   (assert (number? x) "x must be a number")
@@ -203,11 +209,14 @@
   (table/setproto @{:x x :y y} Vector))
 
 (defn from-polar [angle &opt radius]
+  "Construct a new vector from the polar coordinates."
   (default radius 1)
   (new (* (math/cos angle) radius)
        (* (math/sin angle) radius)))
 
-(defn random-direction [&opt len-min len-max seed]
+(defn random-direction
+  "Construct a new vector of random length in random direction."
+  [&opt len-min len-max seed]
   (default len-min 1)
   (default len-max len-min)
   (default seed nil)
