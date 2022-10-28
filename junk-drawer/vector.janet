@@ -2,7 +2,8 @@
   "Whether or not object is a vector."
   [self]
   (and (table? self)
-       (every? (map number? (values self)))))
+       (number? (self :x))
+       (number? (self :y))))
 
 (defn clone
   "deep copy of the vector."
