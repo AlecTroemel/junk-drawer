@@ -75,8 +75,9 @@
 (defn to-polar
   "polar version of the vector"
   [self]
-  {:x (math/atan2 (self :x) (self :y))
-   :y (:length self)})
+  (table/setproto {:x (math/atan2 (self :x) (self :y))
+                   :y (:length self)}
+                  (table/getproto self)))
 
 (defn distance2
   "the squared distance between vectors A and B"
