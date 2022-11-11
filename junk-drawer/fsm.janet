@@ -12,9 +12,9 @@ Check out the docs of that fn for more!
 (defn- current-node-call [self fn-name & args]
   ""
   (when-let [current-node (:get-node self (self :current))
-             leave-fn (get-in current-node [:data fn-name] nil)
-             leave-exists (not (nil? leave-fn))]
-    (leave-fn self ;args)))
+             node-fn (get-in current-node [:data fn-name] nil)
+             leave-exists (not (nil? node-fn))]
+    (node-fn self ;args)))
 
 (defn- apply-edges-functions [self]
   "Create functions on self for each edge in the current node"
