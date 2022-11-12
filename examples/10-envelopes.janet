@@ -1,4 +1,9 @@
 (use /junk-drawer)
+
+(defn print-bar [v]
+  (for j 0 (math/round v) (prin "="))
+  (print ""))
+
 # Envelopes are multi-state tweens. Lets look at the most complicated one, ADSR
 #
 # ADSR is short for Attack Decay Sustain Release. Targets and durations are required,
@@ -12,17 +17,11 @@
 (:begin *adsr*)
 
 # call tick to iterate to the next step.. though we'll get trapped in the sustain state
-(for i 0 40
-  (let [v (:tick *adsr*)]
-    (for j 0 (math/round v) (prin "="))
-    (print "")))
+(for i 0 40 (print-bar (:tick *adsr*)))
 
 (:release *adsr*)
 (print "RELEASED")
 
-(for i 0 15
-  (let [v (:tick *adsr*)]
-    (for j 0 (math/round v) (prin "="))
-    (print "")))
+(for i 0 15 (print-bar (:tick *adsr*)))
 
 # There are also the simpler ASR and AR envelopes.
