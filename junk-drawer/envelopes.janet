@@ -132,7 +132,10 @@ All envelopes have the same api. Create them with their constructor, then use th
 
                        (fsm/transition :begin :idle :attack)
                        (fsm/transition :next :attack :release)
-                       (fsm/transition :next :release :idle))
+                       (fsm/transition :next :release :idle)
+
+                       (fsm/transition :reset :attack :idle)
+                       (fsm/transition :reset :release :idle))
                       Envelope)
       (:apply-edges-functions)
       (:apply-data-to-root)))
@@ -168,7 +171,11 @@ All envelopes have the same api. Create them with their constructor, then use th
                        (fsm/transition :begin :idle :attack)
                        (fsm/transition :next :attack :sustain)
                        (fsm/transition :release :sustain :release)
-                       (fsm/transition :next :release :idle))
+                       (fsm/transition :next :release :idle)
+
+                       (fsm/transition :reset :attack :idle)
+                       (fsm/transition :reset :sustain :idle)
+                       (fsm/transition :reset :release :idle))
                       Envelope)
       (:apply-edges-functions)
       (:apply-data-to-root)))
@@ -211,7 +218,12 @@ All envelopes have the same api. Create them with their constructor, then use th
                        (fsm/transition :next :attack :decay)
                        (fsm/transition :next :decay :sustain)
                        (fsm/transition :release :sustain :release)
-                       (fsm/transition :next :release :idle))
+                       (fsm/transition :next :release :idle)
+
+                       (fsm/transition :reset :attack :idle)
+                       (fsm/transition :reset :decay :idle)
+                       (fsm/transition :reset :sustain :idle)
+                       (fsm/transition :reset :release :idle))
                       Envelope)
       (:apply-edges-functions)
       (:apply-data-to-root)))
