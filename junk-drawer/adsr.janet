@@ -1,4 +1,4 @@
-```
+(setdyn :doc ```
 ADSR is the most common kind of envelope generator. It has four stages: attack, decay, sustain, and release (ADSR).
   - Attack is the time taken for initial run-up of level from nil to peak, beginning when the key is pressed.
   - Decay is the time taken for the subsequent run down from the attack level to the designated sustain level.
@@ -9,11 +9,11 @@ ADSR is the most common kind of envelope generator. It has four stages: attack, 
   /  \
  /    ------\
 /            \
-A   D    S   R
+A    D   S   R
 
 Although the most common use case for this is music, it has many other uses! For example you could use an ADSR for a characters run speed, or jump height.
+```)
 
-```
 (import ./fsm :as "fsm")
 (import ./tweens :as "tweens")
 
@@ -89,11 +89,28 @@ Although the most common use case for this is music, it has many other uses! For
      :__id__ :adsr
      :__validate__ (fn [& args] true)}))
 
-(defn create [&named
-              attack-target attack-duration attack-tween
-              decay-target decay-duration decay-tween
-              sustain-duration
-              release-duration release-tween]
+(defn create
+  ```
+  Create a new ADSR finite state machine. Parameters are:
+   - attack target, duration, and optional tween
+   - decay target, duration, and optional tween
+   - sustain duriation
+   - decay duration, and optional tween
+
+  (var *adsr* (adsr/create
+               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
+               :decay-target 25 :decay-duration 15
+               :sustain-duration 10
+               :release-duration 15 :release-tween tweens/in-out-quad))
+
+  (:begin *adsr*)
+  (printf "next value: %q" (:tick *adsr*))
+  ```
+  [&named
+   attack-target attack-duration attack-tween
+   decay-target decay-duration decay-tween
+   sustain-duration
+   release-duration release-tween]
   (-> (table/setproto (fsm/create
                        (attack-state attack-target attack-duration attack-tween)
                        (decay-state decay-target decay-duration decay-tween)
