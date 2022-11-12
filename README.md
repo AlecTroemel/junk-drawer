@@ -2,7 +2,7 @@
 
 [![Test](https://github.com/AlecTroemel/junk-drawer/actions/workflows/main.yml/badge.svg)](https://github.com/AlecTroemel/junk-drawer/actions/workflows/main.yml)
 
-Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small collection of tools & utils for developing games in the wonderful [Janet Lang](https://janet-lang.org).
+Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a collection of tools & utils for developing games in the wonderful [Janet Lang](https://janet-lang.org).
 
 ```bash
 [sudo] jpm install https://github.com/AlecTroemel/junk-drawer
@@ -18,6 +18,7 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a small
 - `timers`: Delayed & Scheduled functions (requires using ECS).
 - `messages`: Communication between systems (requires using ECS).
 - `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS).
+- `envelopes`: Multi stage tweens from the world of music (built off of directed graph and tweens).
 
 
 Here's an obligitory example that uses most the stuff here.

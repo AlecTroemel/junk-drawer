@@ -4,9 +4,10 @@
 (import ./junk-drawer/vector :as vector :export true)
 (import ./junk-drawer/fsm :as fsm :export true)
 (import ./junk-drawer/gamestate :as gamestate :export true)
+(import ./junk-drawer/envelopes :as envelopes :export true)
 
 (import ./junk-drawer/timers :as timers :export true)
-(def message timers/timer)
+(def timer timers/timer)
 
 (import ./junk-drawer/messages :as messages :export true)
 (def message messages/message)

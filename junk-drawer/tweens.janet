@@ -132,7 +132,7 @@ examples/07-tweens.janet for more!
            :when (not (nil? tween))]
       (yield [(tween 0) (tween 1) current]))))
 
-(defn- interpolate
+(defn interpolate
   ```
   Recursively apply tween 'func' to all fields of 'current'.
   ```
