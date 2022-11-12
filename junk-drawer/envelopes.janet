@@ -18,6 +18,7 @@ All envelopes have the same api. Create them with their constructor, then use th
 (import ./fsm :as "fsm")
 (import ./tweens :as "tweens")
 
+# Different possible states for envelopes
 (defn- attack-state [target duration &opt tween]
   (default tween tweens/in-linear)
   (fsm/state :attack
@@ -81,6 +82,7 @@ All envelopes have the same api. Create them with their constructor, then use th
      :value 0
      :next-value (fn idle-next-value [self] 0)))
 
+# Envelope "Class" functions and definition
 (defn- tick [self]
   (let [current-node (:get-node self (self :current))
         new-value (:next-value self)]
@@ -103,8 +105,51 @@ All envelopes have the same api. Create them with their constructor, then use th
      :__id__ :envelope
      :__validate__ (fn [& args] true)}))
 
+# Macro to create envelopes
+(defn- state-fn [name]
+  (match name
+    :attack attack-state
+    :decay decay-state
+    :sustain sustain-state
+    :release release-state))
 
-(defn ar
+(defn- state-args [name]
+  (match name
+    :attack ~(attack-target attack-duration attack-tween)
+    :decay ~(decay-target decay-duration decay-tween)
+    :sustain []
+    :release ~(release-duration release-tween)))
+
+(defn- inter-state-transitions [a b]
+  (match [a b]
+    [:sustain b] [~fsm/transition :release :sustain b]
+    [~fsm/transition :next a b]))
+
+(defmacro- defn-envelope [name docs & states]
+  ~(defn ,name
+     ,docs
+     [&named ,;(mapcat state-args states)]
+     (-> (table/setproto
+          (,fsm/create
+            # States
+            (idle-state)
+            ,;(map |[(state-fn $) ;(state-args $)] states)
+
+            # "inter-state" transitions
+            (fsm/transition :begin :idle ,(first states))
+            ,;(seq [i :range [0 (- (length states) 1)]
+                    :let [a (states i)
+                          b (states (+ i 1))]]
+                   (inter-state-transitions a b))
+            (fsm/transition :next ,(last states) :idle)
+
+            # "reset" transitions
+            ,;(map |[fsm/transition :reset $ :idle] states))
+          ,Envelope)
+         (:apply-edges-functions)
+         (:apply-data-to-root))))
+
+(defn-envelope ar
   ```
   Create a new AR finite state machine. It just uses attack -> release.
 
@@ -113,35 +158,10 @@ All envelopes have the same api. Create them with their constructor, then use th
      /    \
     /      \
    A        R
-
-  Parameters for this function are:
-    - attack target, duration, and optional tween
-    - decay duration, and optional tween
-
-  (var *asr* (envelopes/asr
-               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
-               :release-duration 15 :release-tween tweens/in-out-quad))
   ```
-  [&named
-   attack-target attack-duration attack-tween
-   release-duration release-tween]
-  (-> (table/setproto (fsm/create
-                       (attack-state attack-target attack-duration attack-tween)
-                       (release-state release-duration release-tween)
-                       (idle-state)
+  :attack :release)
 
-                       (fsm/transition :begin :idle :attack)
-                       (fsm/transition :next :attack :release)
-                       (fsm/transition :next :release :idle)
-
-                       (fsm/transition :reset :attack :idle)
-                       (fsm/transition :reset :release :idle))
-                      Envelope)
-      (:apply-edges-functions)
-      (:apply-data-to-root)))
-
-
-(defn asr
+(defn-envelope asr
   ```
   Create a new ASR finite state machine, attack -> sustain -> release.
 
@@ -150,37 +170,10 @@ All envelopes have the same api. Create them with their constructor, then use th
      /          \
     /            \
     A      S     R
-
-  Parameters for this function are:
-    - attack target, duration, and optional tween
-    - decay duration, and optional tween
-
-  (var *asr* (envelopes/asr
-               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
-               :release-duration 15 :release-tween tweens/in-out-quad))
   ```
-  [&named
-   attack-target attack-duration attack-tween
-   release-duration release-tween]
-  (-> (table/setproto (fsm/create
-                       (attack-state attack-target attack-duration attack-tween)
-                       (sustain-state)
-                       (release-state release-duration release-tween)
-                       (idle-state)
+  :attack :sustain :release)
 
-                       (fsm/transition :begin :idle :attack)
-                       (fsm/transition :next :attack :sustain)
-                       (fsm/transition :release :sustain :release)
-                       (fsm/transition :next :release :idle)
-
-                       (fsm/transition :reset :attack :idle)
-                       (fsm/transition :reset :sustain :idle)
-                       (fsm/transition :reset :release :idle))
-                      Envelope)
-      (:apply-edges-functions)
-      (:apply-data-to-root)))
-
-(defn adsr
+(defn-envelope adsr
   ```
   Create a new ADSR finite state machine, attack -> decay -> sustain -> release.
 
@@ -189,41 +182,5 @@ All envelopes have the same api. Create them with their constructor, then use th
      /    ------\
     /            \
     A    D   S   R
-
-  Parameters for this function are:
-    - attack target, duration, and optional tween
-    - decay target, duration, and optional tween
-    - decay duration, and optional tween
-
-  (var *adsr* (envelopes/adsr
-               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
-               :decay-target 25 :decay-duration 15
-               :release-duration 15 :release-tween tweens/in-out-quad))
-
-  (:begin *adsr*)
-  (printf "next value: %q" (:tick *adsr*))
   ```
-  [&named
-   attack-target attack-duration attack-tween
-   decay-target decay-duration decay-tween
-   release-duration release-tween]
-  (-> (table/setproto (fsm/create
-                       (attack-state attack-target attack-duration attack-tween)
-                       (decay-state decay-target decay-duration decay-tween)
-                       (sustain-state)
-                       (release-state release-duration release-tween)
-                       (idle-state)
-
-                       (fsm/transition :begin :idle :attack)
-                       (fsm/transition :next :attack :decay)
-                       (fsm/transition :next :decay :sustain)
-                       (fsm/transition :release :sustain :release)
-                       (fsm/transition :next :release :idle)
-
-                       (fsm/transition :reset :attack :idle)
-                       (fsm/transition :reset :decay :idle)
-                       (fsm/transition :reset :sustain :idle)
-                       (fsm/transition :reset :release :idle))
-                      Envelope)
-      (:apply-edges-functions)
-      (:apply-data-to-root)))
+  :attack :decay :sustain :release)
