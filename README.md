@@ -18,7 +18,7 @@ Everyones got one (usually somewhere in the kitchen). __Junk Drawer__ is a colle
 - `timers`: Delayed & Scheduled functions (requires using ECS).
 - `messages`: Communication between systems (requires using ECS).
 - `tweens`: Some common tweening functions and a way to interpolate components with them (mostly requires ECS).
-- `adsr`: ADSR envelope (built off of directed graph) with ability to set tweens per stage.
+- `envelopes`: Multi stage tweens from the world of music (built off of directed graph and tweens).
 
 
 Here's an obligitory example that uses most the stuff here.
