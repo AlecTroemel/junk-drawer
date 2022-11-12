@@ -1,17 +1,17 @@
 (setdyn :doc ```
-ADSR is the most common kind of envelope generator. It has four stages: attack, decay, sustain, and release (ADSR).
+Envolopes are basically multistage tweens. There are 4 possible stages to the envelopes
   - Attack is the time taken for initial run-up of level from nil to peak, beginning when the key is pressed.
   - Decay is the time taken for the subsequent run down from the attack level to the designated sustain level.
   - Sustain is the level during the main sequence of the sound's duration, until the key is released.
   - Release is the time taken for the level to decay from the sustain level to zero after the key is released
 
-   /\
-  /  \
- /    ------\
-/            \
-A    D   S   R
+This module contains common envelopes usually used in music, however there are many other uses! For example
+consider using an ADSR for a characters run speed, or an ASR for their jump arc.
 
-Although the most common use case for this is music, it has many other uses! For example you could use an ADSR for a characters run speed, or jump height.
+All envelopes have the same api. Create them with their constructor, then use the ":begin" and ":tick" object method.
+
+(:begin *adsr*)
+(printf "next value: %q" (:tick *adsr*))
 ```)
 
 (import ./fsm :as "fsm")
@@ -86,23 +86,104 @@ Although the most common use case for this is music, it has many other uses! For
 
     (self :value)))
 
-(def ADSR
+(def Envelope
   (merge
    fsm/FSM
    @{:tick tick
      :current :idle
-     :__id__ :adsr
+     :__id__ :envelope
      :__validate__ (fn [& args] true)}))
 
-(defn create
-  ```
-  Create a new ADSR finite state machine. Parameters are:
-   - attack target, duration, and optional tween
-   - decay target, duration, and optional tween
-   - sustain duriation
-   - decay duration, and optional tween
 
-  (var *adsr* (adsr/create
+(defn ar
+  ```
+  Create a new AR finite state machine. It just uses attack -> release.
+
+       /\
+      /  \
+     /    \
+    /      \
+    A       R
+
+  Parameters for this function are:
+    - attack target, duration, and optional tween
+    - decay duration, and optional tween
+
+  (var *asr* (envelopes/asr
+               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
+               :release-duration 15 :release-tween tweens/in-out-quad))
+  ```
+  [&named
+   attack-target attack-duration attack-tween
+   release-duration release-tween]
+  (-> (table/setproto (fsm/create
+                       (attack-state attack-target attack-duration attack-tween)
+                       (release-state release-duration release-tween)
+                       (idle-state)
+
+                       (fsm/transition :begin :idle :attack)
+                       (fsm/transition :next :attack :release)
+                       (fsm/transition :next :release :idle))
+                      Envelope)
+      (:apply-edges-functions)
+      (:apply-data-to-root)))
+
+
+(defn asr
+  ```
+  Create a new ASR finite state machine, attack -> sustain -> release.
+
+       /------\
+      /        \
+     /          \
+    /            \
+    A      S     R
+
+  Parameters for this function are:
+    - attack target, duration, and optional tween
+    - sustain duriation
+    - decay duration, and optional tween
+
+  (var *asr* (envelopes/asr
+               :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
+               :sustain-duration 10
+               :release-duration 15 :release-tween tweens/in-out-quad))
+  ```
+  [&named
+   attack-target attack-duration attack-tween
+   sustain-duration
+   release-duration release-tween]
+  (-> (table/setproto (fsm/create
+                       (attack-state attack-target attack-duration attack-tween)
+                       (sustain-state sustain-duration)
+                       (release-state release-duration release-tween)
+                       (idle-state)
+
+                       (fsm/transition :begin :idle :attack)
+                       (fsm/transition :next :attack :sustain)
+                       (fsm/transition :next :sustain :release)
+                       (fsm/transition :next :release :idle))
+                      Envelope)
+      (:apply-edges-functions)
+      (:apply-data-to-root)))
+
+(defn adsr
+  ```
+  Create a new ADSR finite state machine, attack -> decay -> sustain -> release.
+
+       /\
+      /  \
+     /    ------\
+    /            \
+    A    D   S   R
+
+  Parameters for this function are:
+    - attack target, duration, and optional tween
+    - decay target, duration, and optional tween
+    - sustain duriation
+    - decay duration, and optional tween
+
+  (var *adsr* (envelopes/adsr
                :attack-target 50 :attack-duration 20 :attack-tween tweens/in-cubic
                :decay-target 25 :decay-duration 15
                :sustain-duration 10
@@ -128,6 +209,6 @@ Although the most common use case for this is music, it has many other uses! For
                        (fsm/transition :next :decay :sustain)
                        (fsm/transition :next :sustain :release)
                        (fsm/transition :next :release :idle))
-                      ADSR)
+                      Envelope)
       (:apply-edges-functions)
       (:apply-data-to-root)))
