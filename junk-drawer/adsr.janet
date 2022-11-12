@@ -76,10 +76,15 @@ Although the most common use case for this is music, it has many other uses! For
   (let [current-node (:get-node self (self :current))
         new-value (:next-value self)]
     (+= (self :elapsed) 1)
-    (when (>= (self :elapsed) (self :duration))
-      (:next self))
     (put self :value new-value)
-    new-value))
+
+    (when (>= (self :elapsed) (self :duration))
+      (let [target (self :target)]
+        (:next self)
+        (when (not (nil? target))
+          (put self :value target))))
+
+    (self :value)))
 
 (def ADSR
   (merge
