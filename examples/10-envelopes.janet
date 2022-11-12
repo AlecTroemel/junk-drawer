@@ -11,7 +11,7 @@
 # call begin on adsr to move it off the :idle  state
 (:begin *adsr*)
 
-# call tick to iterate to the next step.. though we'll get trapped in the sustain stat
+# call tick to iterate to the next step.. though we'll get trapped in the sustain state
 (for i 0 40
   (let [v (:tick *adsr*)]
     (for j 0 (math/round v) (prin "="))
