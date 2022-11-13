@@ -8,7 +8,7 @@
              :release-duration 10)]
   (test/assert (= (*ar* :current) :idle) "AR starts in idle")
 
-  (:begin *ar*)
+  (:trigger *ar*)
   (test/assert (= (*ar* :current) :attack) "AR attack after begin")
 
   (for i 0 10 (:tick *ar*))
@@ -27,7 +27,7 @@
              :release-duration 10)]
   (test/assert (= (*asr* :current) :idle) "ASR starts in idle")
 
-  (:begin *asr*)
+  (:trigger *asr*)
   (test/assert (= (*asr* :current) :attack) "ASR attack after begin")
 
   (for i 0 10 (:tick *asr*))
@@ -54,7 +54,7 @@
              :release-duration 10)]
   (test/assert (= (*adsr* :current) :idle) "ADSR starts in idle")
 
-  (:begin *adsr*)
+  (:trigger *adsr*)
   (test/assert (= (*adsr* :current) :attack) "ADSR attack after begin")
 
   (for i 0 10 (:tick *adsr*))

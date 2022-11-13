@@ -18,7 +18,6 @@ All envelopes have the same api. Create them with their constructor, then use th
 (import ./fsm :as "fsm")
 (import ./tweens :as "tweens")
 
-# Different possible states for envelopes
 (defn- attack-state [target duration &opt tween]
   (default tween tweens/in-linear)
   (fsm/state :attack
@@ -80,20 +79,21 @@ All envelopes have the same api. Create them with their constructor, then use th
 (defn- idle-state []
   (fsm/state :idle
      :value 0
+     :elapsed 0
+     :complete? (fn idle-complete? [self] false)
      :next-value (fn idle-next-value [self] 0)))
 
-# Envelope "Class" functions and definition
 (defn- tick [self]
   (let [current-node (:get-node self (self :current))
         new-value (:next-value self)]
     (+= (self :elapsed) 1)
     (put self :value new-value)
 
-    (when (:complete? self)
-      (let [target (self :target)]
-        (:next self)
-        (when (not (nil? target))
-          (put self :value target))))
+    (when-let [state-complete? (:complete? self)
+               auto-fn (get self :auto false)
+               target (get self :target new-value)]
+      (:auto self)
+      (put self :value target))
 
     (self :value)))
 
@@ -102,49 +102,15 @@ All envelopes have the same api. Create them with their constructor, then use th
    fsm/FSM
    @{:tick tick
      :current :idle
-     :__id__ :envelope
-     :__validate__ (fn [& args] true)}))
+       :__id__ :envelope
+       :__validate__ (fn [& args] true)}))
 
-# Macro to create envelopes
-(defn- state-fn [name]
-  (match name
-    :attack attack-state
-    :decay decay-state
-    :sustain sustain-state
-    :release release-state))
-
-(defn- state-args [name]
-  (match name
-    :attack ~(attack-target attack-duration attack-tween)
-    :decay ~(decay-target decay-duration decay-tween)
-    :sustain []
-    :release ~(release-duration release-tween)))
-
-(defn- inter-state-transitions [a b]
-  (match [a b]
-    [:sustain b] [~fsm/transition :release :sustain b]
-    [~fsm/transition :next a b]))
-
-(defmacro- defn-envelope [name docs & states]
+(defmacro- defn-envelope [name docs args & body]
   ~(defn ,name
      ,docs
-     [&named ,;(mapcat state-args states)]
+     [&named ,;args]
      (-> (table/setproto
-          (,fsm/create
-            # States
-            (idle-state)
-            ,;(map |[(state-fn $) ;(state-args $)] states)
-
-            # "inter-state" transitions
-            (fsm/transition :begin :idle ,(first states))
-            ,;(seq [i :range [0 (- (length states) 1)]
-                    :let [a (states i)
-                          b (states (+ i 1))]]
-                   (inter-state-transitions a b))
-            (fsm/transition :next ,(last states) :idle)
-
-            # "reset" transitions
-            ,;(map |[fsm/transition :reset $ :idle] states))
+          (,fsm/create ,;body)
           ,Envelope)
          (:apply-edges-functions)
          (:apply-data-to-root))))
@@ -159,7 +125,20 @@ All envelopes have the same api. Create them with their constructor, then use th
     /      \
    A        R
   ```
-  :attack :release)
+  [attack-target attack-duration attack-tween
+   release-duration release-tween]
+
+  (idle-state)
+  (fsm/transition :trigger :idle :attack)
+
+  (attack-state attack-target attack-duration attack-tween)
+  (fsm/transition :auto :attack :release)
+  (fsm/transition :trigger :attack :attack)
+  (fsm/transition :release :attack :release)
+
+  (release-state release-duration release-tween)
+  (fsm/transition :trigger :release :attack)
+  (fsm/transition :auto :release :idle))
 
 (defn-envelope asr
   ```
@@ -171,7 +150,25 @@ All envelopes have the same api. Create them with their constructor, then use th
     /            \
     A      S     R
   ```
-  :attack :sustain :release)
+  [attack-target attack-duration attack-tween
+   release-duration release-tween]
+
+  (idle-state)
+  (fsm/transition :trigger :idle :attack)
+
+  (attack-state attack-target attack-duration attack-tween)
+  (fsm/transition :auto :attack :sustain)
+  (fsm/transition :trigger :attack :attack)
+  (fsm/transition :release :attack :release)
+
+  (sustain-state)
+  (fsm/transition :trigger :sustain :attack)
+  (fsm/transition :release :sustain :release)
+
+  (release-state release-duration release-tween)
+  (fsm/transition :trigger :release :attack)
+  (fsm/transition :auto :release :idle))
+
 
 (defn-envelope adsr
   ```
@@ -183,4 +180,26 @@ All envelopes have the same api. Create them with their constructor, then use th
     /            \
     A    D   S   R
   ```
-  :attack :decay :sustain :release)
+  [attack-target attack-duration attack-tween
+   decay-target decay-duration decay-tween
+   release-duration release-tween]
+  (idle-state)
+  (fsm/transition :trigger :idle :attack)
+
+  (attack-state attack-target attack-duration attack-tween)
+  (fsm/transition :auto :attack :decay)
+  (fsm/transition :trigger :attack :attack)
+  (fsm/transition :release :attack :release)
+
+  (decay-state decay-target decay-duration decay-tween)
+  (fsm/transition :auto :decay :sustain)
+  (fsm/transition :trigger :decay :attack)
+  (fsm/transition :release :decay :release)
+
+  (sustain-state)
+  (fsm/transition :trigger :sustain :attack)
+  (fsm/transition :release :sustain :release)
+
+  (release-state release-duration release-tween)
+  (fsm/transition :trigger :release :attack)
+  (fsm/transition :auto :release :idle))
