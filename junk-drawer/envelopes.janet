@@ -21,15 +21,16 @@ All envelopes have the same api. Create them with their constructor, then use th
 (defn- attack-state [target duration &opt tween]
   (default tween tweens/in-linear)
   (fsm/state :attack
+     :start 0
      :target target
      :elapsed 0
      :duration duration
      :complete? (fn attack-complete [self]
-                  (>= (self :elapsed)
-                      (self :duration)))
+                  (> (self :elapsed)
+                     (self :duration)))
      :next-value (fn attack-next-value [self]
                    (tweens/interpolate
-                    (self :value)
+                    (self :start)
                     (self :target)
                     (self :elapsed)
                     (self :duration)
@@ -42,11 +43,11 @@ All envelopes have the same api. Create them with their constructor, then use th
      :elapsed 0
      :duration duration
      :complete? (fn decay-complete [self]
-                  (>= (self :elapsed)
-                      (self :duration)))
+                  (> (self :elapsed)
+                     (self :duration)))
      :next-value (fn decay-next-value [self]
                    (tweens/interpolate
-                    (self :value)
+                    (self :start)
                     (self :target)
                     (self :elapsed)
                     (self :duration)
@@ -65,11 +66,11 @@ All envelopes have the same api. Create them with their constructor, then use th
      :elapsed 0
      :duration duration
      :complete? (fn release-complete [self]
-                  (>= (self :elapsed)
-                      (self :duration)))
+                  (> (self :elapsed)
+                     (self :duration)))
      :next-value (fn release-next-value [self]
                    (tweens/interpolate
-                    (self :value)
+                    (self :start)
                     (self :target)
                     (self :elapsed)
                     (self :duration)
@@ -89,9 +90,10 @@ All envelopes have the same api. Create them with their constructor, then use th
 
     (when-let [state-complete? (:complete? self)
                auto-fn (get self :auto false)
-               target (get self :target new-value)]
+               next-start (get self :target new-value)]
       (:auto self)
-      (put self :value target))
+      (put self :start next-start)
+      (put self :value next-start))
 
     (self :value)))
 
@@ -100,9 +102,9 @@ All envelopes have the same api. Create them with their constructor, then use th
    fsm/FSM
    @{:tick tick
      :current :idle
-     :value 0
+       :value 0
      :__id__ :envelope
-     :__validate__ (fn [& args] true)}))
+       :__validate__ (fn [& args] true)}))
 
 (defmacro- defn-envelope [name docs args & body]
   ~(defn ,name
