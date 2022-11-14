@@ -21,7 +21,6 @@ All envelopes have the same api. Create them with their constructor, then use th
 (defn- attack-state [target duration &opt tween]
   (default tween tweens/in-linear)
   (fsm/state :attack
-     :value 0
      :target target
      :elapsed 0
      :duration duration
@@ -78,7 +77,6 @@ All envelopes have the same api. Create them with their constructor, then use th
 
 (defn- idle-state []
   (fsm/state :idle
-     :value 0
      :elapsed 0
      :complete? (fn idle-complete? [self] false)
      :next-value (fn idle-next-value [self] 0)))
@@ -102,8 +100,9 @@ All envelopes have the same api. Create them with their constructor, then use th
    fsm/FSM
    @{:tick tick
      :current :idle
-       :__id__ :envelope
-       :__validate__ (fn [& args] true)}))
+     :value 0
+     :__id__ :envelope
+     :__validate__ (fn [& args] true)}))
 
 (defmacro- defn-envelope [name docs args & body]
   ~(defn ,name
