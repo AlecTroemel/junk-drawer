@@ -84,10 +84,20 @@ examples/07-tweens.janet for more!
 (def-component tween
   :entity :number
   :component :keyword
+  :start (or :table :struct)
   :to (or :table :struct)
   :with :function
   :duration :number
   :elapsed-time :number)
+
+(defn- deep-clone [x]
+  ((fn f [y] (walk f y)) x))
+
+(defn- find-and-clone [world ent componet]
+  "find component value for ent using black magic, then deep clone it"
+  (-> (get-in world [:database componet])
+      (:get-component ent)
+      (deep-clone)))
 
 (defn create
   ```
@@ -110,6 +120,7 @@ examples/07-tweens.janet for more!
   [world ent component &named to with duration]
   (add-entity world (tween :entity ent
                            :component component
+                           :start (find-and-clone world ent component)
                            :to to
                            :with with
                            :duration duration
@@ -124,7 +135,6 @@ examples/07-tweens.janet for more!
   3. 'filtering' the query results for the ecs in tweens
   ```
   [wld tweens]
-  # (pp tweens)
   (fn []
     (loop [[cmp tweens] :pairs (group-by |(get-in $ [1 :component]) tweens)
            [tweening-ent current] :in (:view wld [:entity cmp])
@@ -136,11 +146,10 @@ examples/07-tweens.janet for more!
   ```
   Recursively apply tween 'func' to all fields of 'current'.
   ```
-  [current to elapsed duration func]
-
-  (match (type current)
-    :number (+ current (* (- to current) (func (/ elapsed duration))))
-    :table (table ;(mapcat |[$ (interpolate (get current $)
+  [start to elapsed duration func]
+  (match (type start)
+    :number (+ start (* (- to start) (func (/ elapsed duration))))
+    :table (table ;(mapcat |[$ (interpolate (get start $)
                                             (get to $)
                                             elapsed
                                             duration
@@ -151,7 +160,8 @@ examples/07-tweens.janet for more!
   {tweens [:entity :tween] wld :world}
 
   (loop [[tween-ent tween-data current] :in (fiber/new (bucket-by-component wld tweens))
-         :let [{:to to
+         :let [{:start start
+                :to to
                 :elapsed-time elapsed
                 :duration duration
                 :with func} tween-data]]
@@ -159,7 +169,7 @@ examples/07-tweens.janet for more!
     # current in this context is the actual component on the entity being tweened
     # So we need to get the new "interpolated value" and apply each key on the
     # actual component table. Also Need to be careful to preserve untweened keys.
-    (each [key val] (pairs (interpolate current to elapsed duration func))
+    (each [key val] (pairs (interpolate start to elapsed duration func))
       (put current key
            (match (type val)
              :number val
