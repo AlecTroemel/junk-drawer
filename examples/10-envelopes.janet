@@ -14,7 +14,7 @@
                :release-duration 15 :release-tween tweens/in-out-quad))
 
 # call begin on adsr to move it off the :idle  state
-(:begin *adsr*)
+(:trigger *adsr*)
 
 # call tick to iterate to the next step.. though we'll get trapped in the sustain state
 (for i 0 40 (print-bar (:tick *adsr*)))
@@ -25,3 +25,4 @@
 (for i 0 15 (print-bar (:tick *adsr*)))
 
 # There are also the simpler ASR and AR envelopes.
+# ALSO, you can release or (re)trigger early from any relevent state
