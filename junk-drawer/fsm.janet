@@ -75,11 +75,11 @@ Check out the docs of that fn for more!
   (table/setproto (digraph/create ;states)
                   FSM))
 
-(defmacro transition [& args] ~(as-macro ,digraph/edge ,;args))
-(defmacro state [& args] ~(as-macro ,digraph/node ,;args))
+(def state digraph/node)
+(def transition digraph/edge)
 (defmacro def-state [name & args]
   ~(def ,(symbol name)
-     (as-macro ,state ,(keyword name) ,;args)))
+     (,state ,(keyword name) ,;args)))
 
 (defmacro define
   ```
