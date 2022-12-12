@@ -9,8 +9,8 @@ between states.
 this module is a thin extension to the Finite state machine.
 ```)
 
-(defmacro transition [& args] ~(as-macro ,fsm/transition ,;args))
-(defmacro state [& args] ~(as-macro ,fsm/state ,;args))
+(def state fsm/state)
+(def transition fsm/transition)
 (defmacro def-state [& args] ~(as-macro ,fsm/def-state ,;args))
 
 (defn- update

@@ -59,3 +59,18 @@
                   [:b :d :e :e2g :c :f])
                "should find correct path"))
 (test/end-suite)
+
+# Test if we can use forms for node data and edges info
+(test/start-suite 2)
+(let [data @{:a "pizza" :b "hotdog"}
+      new-node (node :a ;(kvs data))]
+  (test/assert (= (get-in new-node [2 :data :a]) "pizza")
+               "should have spliced data correctly"))
+
+(let [name :pizza
+      from :a
+      to :b
+      new-edge (edge name from to)]
+  (test/assert (= new-edge [:edge :a {:name :pizza :to :b :weight 1}]))
+  )
+(test/end-suite)

@@ -88,7 +88,7 @@ This implimentation uses a (relatively naive) sparse set data structure.
   ~(def ,name
      (tuple
        ,(values queries)
-       (fn [,;(keys queries) dt] ,;body))))
+       (fn ,name [,;(keys queries) dt] ,;body))))
 
 (defn- get-or-create-component-set
   "return the sparse set for the component, creating if it it does not already exist."

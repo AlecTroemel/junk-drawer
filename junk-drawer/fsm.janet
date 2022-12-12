@@ -9,16 +9,19 @@ This module extends the directed-graph. The main way you'll use it is with
 Check out the docs of that fn for more!
 ```)
 
+(defn- get-current-state [self]
+  (:get-node self (self :current)))
+
 (defn- current-node-call [self fn-name & args]
   ""
-  (when-let [current-node (:get-node self (self :current))
+  (when-let [current-node (:get-current-state self)
              node-fn (get-in current-node [:data fn-name] nil)
              leave-exists (not (nil? node-fn))]
     (node-fn self ;args)))
 
 (defn- apply-edges-functions [self]
   "Create functions on self for each edge in the current node"
-  (when-let [current-node (:get-node self (self :current))
+  (when-let [current-node (:get-current-state self)
              edges (current-node :edges)]
     (each (edge-name edge) (pairs edges)
       (put self edge-name
@@ -34,7 +37,7 @@ Check out the docs of that fn for more!
   (put self :current-data-keys @[])
 
   # apply data to root of fsm
-  (let [current-node (:get-node self (self :current))
+  (let [current-node (:get-current-state self)
         {:data data} current-node]
     (each (key val) (pairs data)
       (array/push (self :current-data-keys) key)
@@ -64,6 +67,7 @@ Check out the docs of that fn for more!
          @{:current @{}
            :current-data-keys @[]
            :visited @{}
+           :get-current-state get-current-state
            :current-node-call current-node-call
            :apply-edges-functions apply-edges-functions
            :apply-data-to-root apply-data-to-root
@@ -75,11 +79,11 @@ Check out the docs of that fn for more!
   (table/setproto (digraph/create ;states)
                   FSM))
 
-(defmacro transition [& args] ~(as-macro ,digraph/edge ,;args))
-(defmacro state [& args] ~(as-macro ,digraph/node ,;args))
+(def state digraph/node)
+(def transition digraph/edge)
 (defmacro def-state [name & args]
   ~(def ,(symbol name)
-     (as-macro ,state ,(keyword name) ,;args)))
+     (,state ,(keyword name) ,;args)))
 
 (defmacro define
   ```

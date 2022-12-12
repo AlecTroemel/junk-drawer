@@ -24,7 +24,7 @@ graph objects metatable if you prefer a OoP style.
 check out the docs on any of those macros/functions for more.
 ```)
 
-(defmacro node
+(defn node
   ```
   Create a node to be used in the "create" or "add-node" functions. Provide
   the node name, and any number of key value pairs for the node data. Name
@@ -35,12 +35,9 @@ check out the docs on any of those macros/functions for more.
     :b (fn [] "hotdog"))
   ```
   [name & properties]
+  [:node (keyword name) {:edges @{} :data (table ;properties)}])
 
-  (if (keyword? name)
-    ~[:node ,(keyword name) ,{:edges @{} :data (table ;properties)}]
-      (error "name must be a keyword")))
-
-(defmacro edge
+(defn edge
   ```
   Create an edge to be used in the "create" or "add-edge" functions. Can be
   any of these forms. note that weight defaults to 1, and the edge name defaults
@@ -52,19 +49,18 @@ check out the docs on any of those macros/functions for more.
   - (edge :from-node :to-node)
   ```
   [& pattern]
-
   (match pattern
     [(name (keyword? name)) (from (keyword? from)) (to (keyword? to)) (weight (number? weight))]
-    ~[:edge ,from {:to ,to :name ,name :weight ,weight}]
+    [:edge from {:to to :name name :weight weight}]
 
     [(name (keyword? name)) (from (keyword? from)) (to (keyword? to))]
-    ~[:edge ,from {:to ,to :name ,name :weight 1}]
+    [:edge from {:to to :name name :weight 1}]
 
     [(from (keyword? from)) (to (keyword? to)) (weight (number? weight))]
-    ~[:edge ,from {:to ,to :name ,to :weight ,weight}]
+    [:edge from {:to to :name to :weight weight}]
 
     [(from (keyword? from)) (to (keyword? to))]
-    ~[:edge ,from {:to ,to :name ,to :weight 1}]))
+    [:edge from {:to to :name to :weight 1}]))
 
 (defn contains [self name]
   ```
