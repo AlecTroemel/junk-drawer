@@ -145,7 +145,7 @@ check out the docs on any of those macros/functions for more.
       (set lowest-weight weight)))
 
   (let [(data weight) (get priority-queue lowest-i)]
-    (array/remove priority-queue lowest-i)
+    (array/remove priority-queue lowest-i 1)
     data))
 
 (defn find-path
@@ -169,20 +169,21 @@ check out the docs on any of those macros/functions for more.
   [self start goal &opt heuristic]
 
   (default heuristic (fn [& rest] 0))
-
   (let [frontier @[[start 0]]
         came-from @{} # path A->B is stored as (came-from B) => A
         cost-so-far @{start 0}]
 
-    (loop [current :iterate (priority-pop frontier)
-           :until (= current goal)
-           {:name edge-name :to next :weight weight} :in (:neighbors self current)
-           :let [new-cost (+ (cost-so-far current) weight)]
-           :while (or (nil? (get came-from next))
-                      (< new-cost (cost-so-far next)))]
-      (put cost-so-far next new-cost)
-      (priority-push frontier next (+ new-cost (heuristic self goal next)))
-      (put came-from next {:from current :edge-name edge-name}))
+    (var current nil)
+    (while (and (array/peek frontier) (not= current goal))
+      (set current (priority-pop frontier))
+      (loop [{:name edge-name :to next :weight weight} :in (:neighbors self current)
+             :let [new-cost (+ (cost-so-far current) weight)]
+             :when (or (nil? (get came-from next))
+                       (< new-cost (cost-so-far next)))]
+        (put cost-so-far next new-cost)
+        (priority-push frontier next (+ new-cost (heuristic self goal next)))
+        (put came-from next {:from current :edge-name edge-name})))
+
 
     # follow the came-from backwards from the goal to the start.
     (var current {:from goal})
