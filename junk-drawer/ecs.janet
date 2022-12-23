@@ -219,9 +219,7 @@ This implimentation uses a (relatively naive) sparse set data structure.
              view-result (map |(view-entry pools $) (intersection-entities pools))]
 
       (:insert view-cache query view-result)
-      (:insert view-cache query [])
-
-      )))
+      (:insert view-cache query []))))
 
 (defn- query-result [world query]
   "Either return a special query, or the results of ECS query."
