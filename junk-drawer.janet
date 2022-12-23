@@ -14,3 +14,5 @@
 
 (import ./junk-drawer/tweens :as tweens :export true)
 (def tween tweens/tween)
+
+(import ./junk-drawer/freeze :as freeze :export true)
