@@ -140,18 +140,17 @@ This implimentation uses a (relatively naive) sparse set data structure.
             (monster))
   ```
   [world & components]
+
   # Use a free ID (from deleted entity) if available
-  (let [eid (or (array/pop (world :reusable-ids))
-                (get world :id-counter))]
+  (let [eid (cond (> (length (world :reusable-ids)) 0)
+                  (array/pop (world :reusable-ids))
+
+                  (let [id (get world :id-counter)]
+                    (+= (world :id-counter) 1) id))]
 
     # Add individual component data to database
     (each component components
       (add-component world eid component))
-
-    # increment the id counter when there are no more
-    # free id's to use
-    (when (empty? (world :reusable-ids))
-      (put world :id-counter (inc (world :id-counter))))
 
     # Return the new eid just created
     eid))
@@ -178,8 +177,9 @@ This implimentation uses a (relatively naive) sparse set data structure.
 
   (register-system world move-sys)
   ```
-  [world sys]
-  (array/push (get world :systems) sys))
+  [world & systems]
+  (each sys systems
+    (array/push (get world :systems) sys)))
 
 (defn- smallest-pool [pools]
   "Length (n) of smallest pool."
@@ -217,6 +217,7 @@ This implimentation uses a (relatively naive) sparse set data structure.
                            (database $)) query)
              all-not-empty? (empty? (filter nil? pools))
              view-result (map |(view-entry pools $) (intersection-entities pools))]
+
       (:insert view-cache query view-result)
       (:insert view-cache query []))))
 
