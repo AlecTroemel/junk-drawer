@@ -4,8 +4,7 @@
   # (printf "entities (dense): %q" entities)
   # (printf "entities-indices (sparse): %q" entity-indices)
   (for i 0 n
-    (printf "%q -> %q" (entities i) (components i)))
-  )
+    (printf "%q -> %q" (entities i) (components i))))
 
 (defn- search
   "If element is present, returns index of element in :entities, Else returns -1."
