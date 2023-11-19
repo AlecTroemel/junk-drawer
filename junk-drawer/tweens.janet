@@ -177,6 +177,6 @@ examples/07-tweens.janet for more!
 
     # Tick the tweens elapsed time, delete it if we've reached its duration
     (let [new-elapsed (+ elapsed 1)]
-      (if (>  elapsed  duration)
+      (if (>=  elapsed  duration)
         (remove-entity wld tween-ent)
         (put tween-data :elapsed-time new-elapsed)))))
