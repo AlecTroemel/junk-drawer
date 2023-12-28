@@ -18,19 +18,23 @@
  (fsm/state :c
     :enter (fn [self from] (set enter-c-called true))
     :leave (fn [self to] (set leave-c-called true)))
- (fsm/transition :goto-a :b :a))
+ (fsm/transition :goto-a :c :a))
 
 (let [*state* (a2b :a)]
   (test/assert (= :a (*state* :current)) "Start at state A.")
   (:goto-b *state*)
+  (test/assert (not (has-key? *state* :goto-b)) "State A transition methods removed when state left")
+  (test/assert (not (has-key? *state* :goto-c)) "State A transition methods removed when state left")
+
   (test/assert (= :b (*state* :current)) "In state B after moving to it.")
   (test/assert (= "value" (*state* :field)) "Copies state data to root of FSM.")
+
   (:goto-a *state* "arg data")
   (test/assert (= :a (*state* :current)) "Move back to state A, with arg passed in.")
   (test/assert (= (*state* :field) nil) "no more data from state B.")
 
   (test/assert-error "transition fn does not exist"
-                     (:goto-dne *state*))
+		     (:goto-dne *state*))
 
   (:goto-c *state*)
   (test/assert enter-c-called "Enter fn for state C called.")
