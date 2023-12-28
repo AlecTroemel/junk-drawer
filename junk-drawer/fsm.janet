@@ -107,13 +107,13 @@ Check out the docs of that fn for more!
 
   (fsm/define colors-fsm
 	    (fsm/state :green
-		   :enter (fn [self from] (print "entering green"))
-		   :leave (fn [self to] (print "entering leaving")))
+		       :enter (fn [self from] (print "entering green"))
+		       :leave (fn [self to] (print "entering leaving")))
 	    (fsm/transition :next :green :yellow)
 
 	    (fsm/state :yellow
-		   :init (fn [self] (print "visiting yellow for the first time"))
-		   :enter (fn [self from] (print "entering yellow")))
+		       :init (fn [self] (print "visiting yellow for the first time"))
+		       :enter (fn [self from] (print "entering yellow")))
 	    (fsm/transition :prev :yellow :green))
 
   (def *colors* (colors-fsm :green))
