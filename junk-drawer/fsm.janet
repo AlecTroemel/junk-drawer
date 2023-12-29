@@ -15,17 +15,23 @@ Check out the docs of that fn for more!
 (defn- current-node-call [self fn-name & args]
   ""
   (when-let [current-node (:get-current-state self)
-             node-fn (get-in current-node [:data fn-name] nil)
-             leave-exists (not (nil? node-fn))]
+	     node-fn (get-in current-node [:data fn-name] nil)
+	     leave-exists (not (nil? node-fn))]
     (node-fn self ;args)))
 
 (defn- apply-edges-functions [self]
   "Create functions on self for each edge in the current node"
+  # clear out old transition methods
+  (each key (get self :current-transition-methods [])
+    (put self key nil))
+  (put self :current-transition-methods @[])
+
   (when-let [current-node (:get-current-state self)
-             edges (current-node :edges)]
+	     edges (current-node :edges)]
     (each (edge-name edge) (pairs edges)
+      (array/push (self :current-transition-methods) edge-name)
       (put self edge-name
-           (fn [self & args] (:goto self (get edge :to) ;args)))))
+	   (fn [self & args] (:goto self (get edge :to) ;args)))))
 
   self)
 
@@ -38,7 +44,7 @@ Check out the docs of that fn for more!
 
   # apply data to root of fsm
   (let [current-node (:get-current-state self)
-        {:data data} current-node]
+	{:data data} current-node]
     (each (key val) (pairs data)
       (array/push (self :current-data-keys) key)
       (put self key val)))
@@ -64,20 +70,21 @@ Check out the docs of that fn for more!
 
 (def FSM
   (merge digraph/Graph
-         @{:current @{}
-           :current-data-keys @[]
-           :visited @{}
-           :get-current-state get-current-state
-           :current-node-call current-node-call
-           :apply-edges-functions apply-edges-functions
-           :apply-data-to-root apply-data-to-root
-           :goto goto
-           :add-state (get digraph/Graph :add-node)}))
+	 @{:current @{}
+	   :current-data-keys @[]
+	   :current-transition-methods @[]
+	   :visited @{}
+	   :get-current-state get-current-state
+	   :current-node-call current-node-call
+	   :apply-edges-functions apply-edges-functions
+	   :apply-data-to-root apply-data-to-root
+	   :goto goto
+	   :add-state (get digraph/Graph :add-node)}))
 
 (defn create [& states]
   "Create a new FSM from the given states."
   (table/setproto (digraph/create ;states)
-                  FSM))
+		  FSM))
 
 (def state digraph/node)
 (def transition digraph/edge)
@@ -99,15 +106,15 @@ Check out the docs of that fn for more!
   time the state is visited.
 
   (fsm/define colors-fsm
-            (state :green
-                   :enter (fn [self] (print "entering green"))
-                   :leave (fn [self] (print "entering leaving")))
-            (transition :next :green :yellow)
+	    (fsm/state :green
+		       :enter (fn [self from] (print "entering green"))
+		       :leave (fn [self to] (print "entering leaving")))
+	    (fsm/transition :next :green :yellow)
 
-            (state :yellow
-                   :init (fn [self] (print "visiting yellow for the first time"))
-                   :enter (fn [self] (print "entering yellow")))
-            (transition :prev :yellow :green))
+	    (fsm/state :yellow
+		       :init (fn [self] (print "visiting yellow for the first time"))
+		       :enter (fn [self from] (print "entering yellow")))
+	    (fsm/transition :prev :yellow :green))
 
   (def *colors* (colors-fsm :green))
 
@@ -127,8 +134,8 @@ Check out the docs of that fn for more!
 
   ~(defn ,name [&opt initial-state]
      (-> (,create ,;states)
-         (put :current initial-state)
-         (put :__validate__ (fn [& args] true))
-         (put :__id__ ,(keyword name))
-         (:apply-edges-functions)
-         (:apply-data-to-root))))
+	 (put :current initial-state)
+	 (put :__validate__ (fn [& args] true))
+	 (put :__id__ ,(keyword name))
+	 (:apply-edges-functions)
+	 (:apply-data-to-root))))
