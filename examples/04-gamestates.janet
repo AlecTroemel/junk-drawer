@@ -18,7 +18,7 @@
 (:add-state *GS* menu)
 (:add-state *GS* game)
 (:add-edge *GS* (gamestate/transition :start-game :menu :game))
-(:add-edge *GS* (gamestate/transition :back-to-menu :menu :game))
+(:add-edge *GS* (gamestate/transition :back-to-menu :game :menu))
 
 (:goto *GS* :menu)
 (:update *GS* dt)
